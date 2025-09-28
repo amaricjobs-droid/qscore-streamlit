@@ -6,7 +6,7 @@ st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout
 st.title("📊 Nexa Quality Measure Dashboard")
 st.caption("Demo-ready dashboard with KPIs, trends, and patient table")
 
-# --- Demo data (keep it lightweight; replace with your data later) ---
+# --- Demo data (replace with your real data later) ---
 data = {
     "patient_id": [101,102,103,104,105,106,107,108],
     "clinic": ["Cedartown","Rockmart","Rome","Rome","Cartersville","Cedartown","Rockmart","Cartersville"],
@@ -17,24 +17,20 @@ data = {
 df = pd.DataFrame(data)
 df["compliant"] = df["value"] >= 0.8
 
-# --- Read query params for deep-link filtering (e.g., ?clinic=Cedartown) ---
-try:
-    params = st.query_params
-except Exception:
-    params = {}
-clinic_param = params.get("clinic", [])
-if isinstance(clinic_param, str):
-    clinic_param = [clinic_param]
+# --- Query params (deep link support) ---
+params = st.query_params
+clinic_param = params.get("clinic", None)
 
-# --- Sidebar filters with session state so buttons can update them ---
+# --- Session state defaults ---
 all_clinics  = sorted(df["clinic"].unique().tolist())
 all_measures = sorted(df["measure"].unique().tolist())
 
 if "sel_clinics" not in st.session_state:
-    st.session_state.sel_clinics = clinic_param or all_clinics
+    st.session_state.sel_clinics = [clinic_param] if clinic_param in all_clinics else all_clinics
 if "sel_measures" not in st.session_state:
     st.session_state.sel_measures = all_measures
 
+# --- Sidebar filters (keys are tied to session_state) ---
 st.sidebar.header("Filters")
 st.sidebar.multiselect(
     "Clinic(s)", options=all_clinics,
@@ -47,20 +43,27 @@ st.sidebar.multiselect(
     key="sel_measures"
 )
 
-# --- Quick clinic chips (buttons) across the top ---
+# --- Callback helpers for clinic chips ---
+def _set_single_clinic(c: str):
+    st.session_state.sel_clinics = [c]
+    st.query_params.update({"clinic": c})
+    st.rerun()
+
+def _show_all_clinics():
+    st.session_state.sel_clinics = all_clinics
+    st.query_params.clear()
+    st.rerun()
+
+# --- Quick clinic filter chips ---
 st.markdown("#### Quick clinic filter")
 cols = st.columns(min(len(all_clinics), 6) or 1)
 for i, c in enumerate(all_clinics):
-    if cols[i % len(cols)].button(c):
-        st.session_state.sel_clinics = [c]
-        st.query_params.update({"clinic": c})
-        st.rerun()
+    cols[i % len(cols)].button(
+        c, key=f"btn_{c}",
+        on_click=_set_single_clinic, args=(c,)
+    )
 
-# Reset button to show all
-if st.button("Show All Clinics"):
-    st.session_state.sel_clinics = all_clinics
-    st.query_params.clear()  # clear query params
-    st.rerun()
+st.button("Show All Clinics", key="btn_all", on_click=_show_all_clinics)
 
 # --- Apply filters ---
 fdf = df[
@@ -70,7 +73,7 @@ fdf = df[
 
 # --- KPIs ---
 col1,col2,col3 = st.columns(3)
-def pct(series): 
+def pct(series):
     return f"{(series.mean()*100):.1f}%" if len(series) else "—"
 col1.metric("Hypertension Control",   pct(fdf.loc[fdf["measure"]=="HTN Control","compliant"]),       "Target: 90%")
 col2.metric("Statin Adherence",       pct(fdf.loc[fdf["measure"]=="Statin Adherence","compliant"]), "Target: 80%")
@@ -95,5 +98,4 @@ with tab2:
     st.subheader("Patient Table")
     st.dataframe(fdf.sort_values("date", ascending=False), use_container_width=True)
 
-st.caption("💡 Tip: You can deep-link filters, e.g., add ?clinic=Cedartown to the URL for a pre-filtered view.")
-
+st.caption("💡 Tip: add ?clinic=Cedartown to the URL to deep-link a clinic.")
