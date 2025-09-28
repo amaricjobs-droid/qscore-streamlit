@@ -2,8 +2,8 @@
 import plotly.express as px
 import streamlit as st
 
-st.set_page_config(page_title="Q-Score Dashboard", page_icon="📊", layout="wide")
-st.title("📊 Q-Score Quality Measure Dashboard")
+st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
+st.title("📊 Nexa Quality Measure Dashboard")
 st.caption("Demo-ready dashboard with KPIs, trends, and patient table")
 
 # --- Demo data (keep it lightweight; replace with your data later) ---
@@ -19,7 +19,7 @@ df["compliant"] = df["value"] >= 0.8
 
 # --- Read query params for deep-link filtering (e.g., ?clinic=Cedartown) ---
 try:
-    params = st.experimental_get_query_params()
+    params = st.query_params
 except Exception:
     params = {}
 clinic_param = params.get("clinic", [])
@@ -53,14 +53,14 @@ cols = st.columns(min(len(all_clinics), 6) or 1)
 for i, c in enumerate(all_clinics):
     if cols[i % len(cols)].button(c):
         st.session_state.sel_clinics = [c]
-        st.experimental_set_query_params(clinic=c)
-        st.experimental_rerun()
+        st.query_params.update({"clinic": c})
+        st.rerun()
 
 # Reset button to show all
 if st.button("Show All Clinics"):
     st.session_state.sel_clinics = all_clinics
-    st.experimental_set_query_params()  # clear query params
-    st.experimental_rerun()
+    st.query_params.clear()  # clear query params
+    st.rerun()
 
 # --- Apply filters ---
 fdf = df[
@@ -96,3 +96,4 @@ with tab2:
     st.dataframe(fdf.sort_values("date", ascending=False), use_container_width=True)
 
 st.caption("💡 Tip: You can deep-link filters, e.g., add ?clinic=Cedartown to the URL for a pre-filtered view.")
+
