@@ -1,14 +1,13 @@
-﻿import io
-import pandas as pd
+﻿import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# ---------- Page & Brand ----------
+# -------- Page & Brand --------
 st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
 st.title("📊 Nexa Quality Measure Dashboard")
 st.caption("A client-ready experience with clear navigation, patient messaging, uploads, and dashboards.")
 
-# ---------- Demo / base data ----------
+# -------- Demo/base data --------
 def load_base_data():
     data = {
         "patient_id": [101,102,103,104,105,106,107,108,109,110],
@@ -21,7 +20,6 @@ def load_base_data():
     df["compliant"] = df["value"] >= 0.8
     return df
 
-# In-memory dataset (upload can replace during the session)
 if "dataframe" not in st.session_state:
     st.session_state.dataframe = load_base_data()
 
@@ -29,50 +27,120 @@ df = st.session_state.dataframe.copy()
 all_clinics = sorted(df["clinic"].unique().tolist())
 all_measures = sorted(df["measure"].unique().tolist())
 
-# ---------- Navigation (top) ----------
-# We use tabs as a top nav bar (most visible placement in Streamlit)
+# -------- Top Navigation --------
 home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
     ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
 )
 
-# ============== HOME =================
+# ---------- helpers ----------
+def apply_filters(_df, clinics, measures):
+    return _df[_df["clinic"].isin(clinics) & _df["measure"].isin(measures)].copy()
+
+# ============== HOME ==============
 with home_tab:
     left, right = st.columns([2,1])
     with left:
         st.subheader("Welcome to Nexa Q-Score")
         st.markdown("""
 **Fast paths**
-- Click **📨 Message Patients** to send outreach by clinic/measure (your #1 value driver)
+- Click **📨 Message Patients** to send outreach by clinic/measure
 - Click **📊 Dashboard** to review KPIs and trends
 - Click **📤 Upload Data** to load a CSV and refresh clinics/measures
 """)
         st.info("Tip: Share deep links like ?clinic=Cedartown to open pre-filtered views.")
-        st.link_button("Go to Messaging", "#message-patients", type="primary")
     with right:
-        # Quick stats
         st.metric("Clinics detected", len(all_clinics))
-        st.metric("Patients in demo", len(df))
+        st.metric("Patients in data", len(df))
         st.metric("Measures tracked", len(all_measures))
 
     st.divider()
     st.subheader("Shortcuts")
+
+    # Callback that sets clinic filter and URL, then reruns
+    def _home_set_clinic(c: str):
+        st.query_params.update({"clinic": c})
+        st.session_state["dash_sel_clinics"] = [c]  # prefill dashboard filter
+        st.toast(f"Clinic set to {c}. Open the 📊 Dashboard tab.")
+        st.rerun()
+
     cols = st.columns(min(len(all_clinics), 6) or 1)
     for i, c in enumerate(all_clinics):
-        cols[i % len(cols)].page_link(
-            "qscore-suite/app/app.py",
-            label=f"Open Dashboard: {c}",
-            icon="📍",
-            args={"clinic": c}
-        )
+        cols[i % len(cols)].button(f"Open Dashboard: {c}", key=f"home
+C:\Users\Amari\qscore-suite\qscore-suite\app\app.py = "C:\Users\Amari\qscore-suite\qscore-suite\app\app.py"
 
-# Helper to apply filters (used by Dashboard & Messaging)
+@"
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# -------- Page & Brand --------
+st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
+st.title("📊 Nexa Quality Measure Dashboard")
+st.caption("A client-ready experience with clear navigation, patient messaging, uploads, and dashboards.")
+
+# -------- Demo/base data --------
+def load_base_data():
+    data = {
+        "patient_id": [101,102,103,104,105,106,107,108,109,110],
+        "clinic": ["Cedartown","Rockmart","Rome","Rome","Cartersville","Cedartown","Rockmart","Cartersville","Rome","Cedartown"],
+        "measure": ["HTN Control","Statin Adherence","30d Follow-up","HTN Control","Statin Adherence","HTN Control","30d Follow-up","HTN Control","Statin Adherence","30d Follow-up"],
+        "value": [0.82,0.76,0.68,0.91,0.85,0.88,0.71,0.93,0.79,0.83],
+        "date": pd.date_range("2025-01-01", periods=10, freq="M")
+    }
+    df = pd.DataFrame(data)
+    df["compliant"] = df["value"] >= 0.8
+    return df
+
+if "dataframe" not in st.session_state:
+    st.session_state.dataframe = load_base_data()
+
+df = st.session_state.dataframe.copy()
+all_clinics = sorted(df["clinic"].unique().tolist())
+all_measures = sorted(df["measure"].unique().tolist())
+
+# -------- Top Navigation --------
+home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
+    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
+)
+
+# ---------- helpers ----------
 def apply_filters(_df, clinics, measures):
     return _df[_df["clinic"].isin(clinics) & _df["measure"].isin(measures)].copy()
+
+# ============== HOME ==============
+with home_tab:
+    left, right = st.columns([2,1])
+    with left:
+        st.subheader("Welcome to Nexa Q-Score")
+        st.markdown("""
+**Fast paths**
+- Click **📨 Message Patients** to send outreach by clinic/measure
+- Click **📊 Dashboard** to review KPIs and trends
+- Click **📤 Upload Data** to load a CSV and refresh clinics/measures
+""")
+        st.info("Tip: Share deep links like ?clinic=Cedartown to open pre-filtered views.")
+    with right:
+        st.metric("Clinics detected", len(all_clinics))
+        st.metric("Patients in data", len(df))
+        st.metric("Measures tracked", len(all_measures))
+
+    st.divider()
+    st.subheader("Shortcuts")
+
+    # Callback that sets clinic filter and URL, then reruns
+    def _home_set_clinic(c: str):
+        st.query_params.update({"clinic": c})
+        st.session_state["dash_sel_clinics"] = [c]  # prefill dashboard filter
+        st.toast(f"Clinic set to {c}. Open the 📊 Dashboard tab.")
+        st.rerun()
+
+    cols = st.columns(min(len(all_clinics), 6) or 1)
+    for i, c in enumerate(all_clinics):
+        cols[i % len(cols)].button(f"Open Dashboard: {c}", key=f"home_{c}", on_click=_home_set_clinic, args=(c,))
 
 # ============== DASHBOARD ==============
 with dash_tab:
     st.subheader("Dashboard")
-    # Read URL params for deep-linking
     params = st.query_params
     clinic_param = params.get("clinic", None)
 
@@ -87,12 +155,11 @@ with dash_tab:
 
     fdf = apply_filters(df, st.session_state.dash_sel_clinics, st.session_state.dash_sel_measures)
 
-    # KPIs
     col1, col2, col3 = st.columns(3)
     def pct(series): return f"{(series.mean()*100):.1f}%" if len(series) else "—"
     col1.metric("Hypertension Control", pct(fdf.loc[fdf["measure"]=="HTN Control","compliant"]), "Target: 90%")
-    col2.metric("Statin Adherence", pct(fdf.loc[fdf["measure"]=="Statin Adherence","compliant"]), "Target: 80%")
-    col3.metric("30-Day Follow-Up", pct(fdf.loc[fdf["measure"]=="30d Follow-up","compliant"]), "Target: 75%")
+    col2.metric("Statin Adherence",   pct(fdf.loc[fdf["measure"]=="Statin Adherence","compliant"]), "Target: 80%")
+    col3.metric("30-Day Follow-Up",   pct(fdf.loc[fdf["measure"]=="30d Follow-up","compliant"]), "Target: 75%")
 
     st.divider()
     t1, t2 = st.tabs(["📈 Trends", "📋 Patient Table"])
@@ -111,17 +178,13 @@ with dash_tab:
 with upload_tab:
     st.subheader("Upload CSV (Demo)")
     st.markdown("""
-Upload a CSV with columns like:  
-**patient_id, clinic, measure, value, date, compliant**  
-
-- The file is **only kept for this session** (demo).  
-- For production, we recommend a secure database (Postgres) or object storage.
+Upload a CSV with columns like: **patient_id, clinic, measure, value, date, compliant**.  
+The file is **only kept for this session**.
 """)
     file = st.file_uploader("Choose CSV file", type=["csv"])
     if file:
         try:
             new_df = pd.read_csv(file)
-            # Light coercion
             if "date" in new_df.columns:
                 new_df["date"] = pd.to_datetime(new_df["date"], errors="coerce")
             if "compliant" in new_df.columns and new_df["compliant"].dtype != bool:
@@ -135,9 +198,7 @@ Upload a CSV with columns like:
 # ============== MESSAGE PATIENTS ======
 with msg_tab:
     st.subheader("Message Patients")
-    st.markdown('<a id="message-patients"></a>', unsafe_allow_html=True)
 
-    # Separate filters for messaging view
     if "msg_sel_clinics" not in st.session_state:
         st.session_state.msg_sel_clinics = all_clinics
     if "msg_sel_measures" not in st.session_state:
@@ -160,27 +221,21 @@ with msg_tab:
     with right:
         st.markdown("**Compose Message**")
         template = st.text_area("Template", value="Hello! Our records show you may be due for follow-up on your health measure. Please contact our clinic to schedule.", height=140)
-        placeholders = st.caption("Placeholders coming soon: {patient_id}, {clinic}, {measure}")
+        st.caption("Placeholders coming soon: {patient_id}, {clinic}, {measure}")
         count = len(mdf)
         st.metric("Recipients to send", count)
-
-        # Send button (stubbed)
-        if st.button("Send Messages", type="primary", help="Demo action - integrate with SMS/Email provider in production"):
-            # Stub: In production, send via Twilio/Email. Log a simple result here.
+        if st.button("Send Messages", type="primary"):
             st.success(f"Queued {count} messages. (Demo only)")
             st.toast("Messages queued (demo)")
 
-    st.info("To wire this to real messaging, store API keys in Secrets and call your messaging provider (e.g., Twilio, SendGrid).")
+    st.info("To wire this to real messaging, store provider API keys in Secrets and call Twilio/SendGrid from this button.")
 
 # ============== REPORTS ===============
 with reports_tab:
     st.subheader("Reports & Exports")
-    st.write("Download a CSV extract of current (filtered) dashboard data.")
-    # Reuse dashboard filter state if present
     filt_clin = st.session_state.get("dash_sel_clinics", all_clinics)
     filt_meas = st.session_state.get("dash_sel_measures", all_measures)
     rdf = apply_filters(df, filt_clin, filt_meas)
-
     if not rdf.empty:
         csv = rdf.to_csv(index=False).encode("utf-8")
         st.download_button("Download CSV", csv, file_name="nexa_export.csv", mime="text/csv")
@@ -194,7 +249,7 @@ with help_tab:
 **How to use this app**
 1. **Upload Data** (CSV) or use the demo data.
 2. Open **Dashboard** to see KPIs, trends, and details.
-3. Go to **Message Patients** to target outreach by clinic/measure and (optionally) non-compliant status.
+3. Go to **Message Patients** to target outreach by clinic/measure.
 4. Use **Reports** to export current filtered data.
 
 **Need assistance?** Contact Nexa Support.
