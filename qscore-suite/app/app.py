@@ -5,22 +5,7 @@ import streamlit as st
 # -------- Page & Brand --------
 st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
 st.title("📊 Nexa Quality Measure Dashboard")
-
-st.markdown("""
-<style>
-.nexa-header {
-  display:flex; align-items:center; gap:.75rem; padding:.5rem .75rem; 
-  border-radius:12px; background:var(--secondary-background-color);
-}
-.nexa-header img { height:28px; }
-.nexa-header h2 { margin:0; font-size:1.05rem; }
-</style>
-<div class="nexa-header">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/OOjs_UI_icon_article-ltr.svg">
-  <h2>Nexa Quality Suite</h2>
-</div>
-""", unsafe_allow_html=True)
-st.caption("A client-ready experience with clear navigation, patient messaging, uploads, and dashboards.")
+st.caption("Client-ready navigation • Patient Messaging • Upload • KPIs • Trends • Exports")
 
 # -------- Demo/base data --------
 def load_base_data():
@@ -35,6 +20,7 @@ def load_base_data():
     df["compliant"] = df["value"] >= 0.8
     return df
 
+# In-memory dataset (session). Uploads replace it for the session only.
 if "dataframe" not in st.session_state:
     st.session_state.dataframe = load_base_data()
 
@@ -42,14 +28,21 @@ df = st.session_state.dataframe.copy()
 all_clinics = sorted(df["clinic"].unique().tolist())
 all_measures = sorted(df["measure"].unique().tolist())
 
-# -------- Top Navigation --------
-home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
-    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
-)
-
 # ---------- helpers ----------
 def apply_filters(_df, clinics, measures):
     return _df[_df["clinic"].isin(clinics) & _df["measure"].isin(measures)].copy()
+
+# Callback: set clinic for Dashboard via URL & session, then rerun
+def _home_set_clinic(c: str):
+    st.query_params.update({"clinic": c})
+    st.session_state["dash_sel_clinics"] = [c]
+    st.toast(f"Clinic set to {c}. Open the 📊 Dashboard tab.")
+    st.rerun()
+
+# -------- Top Navigation (tabs as top bar) --------
+home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
+    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
+)
 
 # ============== HOME ==============
 with home_tab:
@@ -58,11 +51,11 @@ with home_tab:
         st.subheader("Welcome to Nexa Q-Score")
         st.markdown("""
 **Fast paths**
-- Click **📨 Message Patients** to send outreach by clinic/measure
-- Click **📊 Dashboard** to review KPIs and trends
-- Click **📤 Upload Data** to load a CSV and refresh clinics/measures
+- **📨 Message Patients** to send outreach by clinic/measure
+- **📊 Dashboard** to review KPIs and trends
+- **📤 Upload Data** to load a CSV and refresh clinics/measures
 """)
-        st.info("Tip: Share deep links like ?clinic=Cedartown to open pre-filtered views.")
+        st.info("Tip: share deep links like ?clinic=Cedartown to open pre-filtered views.")
     with right:
         st.metric("Clinics detected", len(all_clinics))
         st.metric("Patients in data", len(df))
@@ -70,103 +63,14 @@ with home_tab:
 
     st.divider()
     st.subheader("Shortcuts")
-
-    # Callback that sets clinic filter and URL, then reruns
-    def _home_set_clinic(c: str):
-        st.query_params.update({"clinic": c})
-        st.session_state["dash_sel_clinics"] = [c]  # prefill dashboard filter
-        st.toast(f"Clinic set to {c}. Open the 📊 Dashboard tab.")
-        st.rerun()
-
     cols = st.columns(min(len(all_clinics), 6) or 1)
     for i, c in enumerate(all_clinics):
-        cols[i % len(cols)].button(f"Open Dashboard: {c}", key=f"home_{c}", on_click=_home_set_clinic, args=(c,))
-C:\Users\Amari\qscore-suite\qscore-suite\app\app.py = "C:\Users\Amari\qscore-suite\qscore-suite\app\app.py"
-
-@"
-import pandas as pd
-import plotly.express as px
-import streamlit as st
-
-# -------- Page & Brand --------
-st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
-st.title("📊 Nexa Quality Measure Dashboard")
-
-st.markdown("""
-<style>
-.nexa-header {
-  display:flex; align-items:center; gap:.75rem; padding:.5rem .75rem; 
-  border-radius:12px; background:var(--secondary-background-color);
-}
-.nexa-header img { height:28px; }
-.nexa-header h2 { margin:0; font-size:1.05rem; }
-</style>
-<div class="nexa-header">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/OOjs_UI_icon_article-ltr.svg">
-  <h2>Nexa Quality Suite</h2>
-</div>
-""", unsafe_allow_html=True)
-st.caption("A client-ready experience with clear navigation, patient messaging, uploads, and dashboards.")
-
-# -------- Demo/base data --------
-def load_base_data():
-    data = {
-        "patient_id": [101,102,103,104,105,106,107,108,109,110],
-        "clinic": ["Cedartown","Rockmart","Rome","Rome","Cartersville","Cedartown","Rockmart","Cartersville","Rome","Cedartown"],
-        "measure": ["HTN Control","Statin Adherence","30d Follow-up","HTN Control","Statin Adherence","HTN Control","30d Follow-up","HTN Control","Statin Adherence","30d Follow-up"],
-        "value": [0.82,0.76,0.68,0.91,0.85,0.88,0.71,0.93,0.79,0.83],
-        "date": pd.date_range("2025-01-01", periods=10, freq="M")
-    }
-    df = pd.DataFrame(data)
-    df["compliant"] = df["value"] >= 0.8
-    return df
-
-if "dataframe" not in st.session_state:
-    st.session_state.dataframe = load_base_data()
-
-df = st.session_state.dataframe.copy()
-all_clinics = sorted(df["clinic"].unique().tolist())
-all_measures = sorted(df["measure"].unique().tolist())
-
-# -------- Top Navigation --------
-home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
-    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
-)
-
-# ---------- helpers ----------
-def apply_filters(_df, clinics, measures):
-    return _df[_df["clinic"].isin(clinics) & _df["measure"].isin(measures)].copy()
-
-# ============== HOME ==============
-with home_tab:
-    left, right = st.columns([2,1])
-    with left:
-        st.subheader("Welcome to Nexa Q-Score")
-        st.markdown("""
-**Fast paths**
-- Click **📨 Message Patients** to send outreach by clinic/measure
-- Click **📊 Dashboard** to review KPIs and trends
-- Click **📤 Upload Data** to load a CSV and refresh clinics/measures
-""")
-        st.info("Tip: Share deep links like ?clinic=Cedartown to open pre-filtered views.")
-    with right:
-        st.metric("Clinics detected", len(all_clinics))
-        st.metric("Patients in data", len(df))
-        st.metric("Measures tracked", len(all_measures))
-
-    st.divider()
-    st.subheader("Shortcuts")
-
-    # Callback that sets clinic filter and URL, then reruns
-    def _home_set_clinic(c: str):
-        st.query_params.update({"clinic": c})
-        st.session_state["dash_sel_clinics"] = [c]  # prefill dashboard filter
-        st.toast(f"Clinic set to {c}. Open the 📊 Dashboard tab.")
-        st.rerun()
-
-    cols = st.columns(min(len(all_clinics), 6) or 1)
-    for i, c in enumerate(all_clinics):
-        cols[i % len(cols)].button(f"Open Dashboard: {c}", key=f"home_{c}", on_click=_home_set_clinic, args=(c,))
+        cols[i % len(cols)].button(
+            f"Open Dashboard: {c}",
+            key=f"home_{c}",
+            on_click=_home_set_clinic,
+            args=(c,)
+        )
 
 # ============== DASHBOARD ==============
 with dash_tab:
@@ -284,5 +188,3 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
-
-
