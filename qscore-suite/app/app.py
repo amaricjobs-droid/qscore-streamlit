@@ -1,145 +1,98 @@
-﻿import streamlit as st
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import requests, os
+﻿import pandas as pd
+import plotly.express as px
+import streamlit as st
 
-st.set_page_config(page_title="Q-Score • Quality Measure Scorecard", layout="wide")
+st.set_page_config(page_title="Q-Score Dashboard", page_icon="📊", layout="wide")
+st.title("📊 Q-Score Quality Measure Dashboard")
+st.caption("Demo-ready dashboard with KPIs, trends, and patient table")
 
-# ---- Messaging Center glue
-MSG_API = os.getenv("MSG_API", "http://127.0.0.1:8001")
+# --- Demo data (keep it lightweight; replace with your data later) ---
+data = {
+    "patient_id": [101,102,103,104,105,106,107,108],
+    "clinic": ["Cedartown","Rockmart","Rome","Rome","Cartersville","Cedartown","Rockmart","Cartersville"],
+    "measure": ["HTN Control","Statin Adherence","30d Follow-up","HTN Control","Statin Adherence","HTN Control","30d Follow-up","HTN Control"],
+    "value": [0.82,0.76,0.68,0.91,0.85,0.88,0.71,0.93],
+    "date": pd.date_range("2025-01-01", periods=8, freq="M")
+}
+df = pd.DataFrame(data)
+df["compliant"] = df["value"] >= 0.8
 
-def enqueue_outreach(patient_id: int, measure: str):
-    try:
-        r = requests.post(f"{MSG_API}/api/enqueue", json={"patient_id": int(patient_id), "measure": measure})
-        return r.ok
-    except Exception:
-        return False
+# --- Read query params for deep-link filtering (e.g., ?clinic=Cedartown) ---
+try:
+    params = st.experimental_get_query_params()
+except Exception:
+    params = {}
+clinic_param = params.get("clinic", [])
+if isinstance(clinic_param, str):
+    clinic_param = [clinic_param]
 
-# ---- Helpers
-def pct(n, d): return (n / d * 100.0) if d else 0.0
-def safe_float(x):
-    try: return float(x)
-    except: return np.nan
-def yes(x): return str(x).strip().lower() in {"1","true","yes","y","t"}
+# --- Sidebar filters with session state so buttons can update them ---
+all_clinics  = sorted(df["clinic"].unique().tolist())
+all_measures = sorted(df["measure"].unique().tolist())
 
-# ---- UI
-st.title("Q-Score: Quality Measure Scorecard & Gap Finder")
-st.caption("Upload a CSV export (patients) with columns like: patient_id, patient_name, provider, location, phone, has_htn, last_bp_systolic, last_bp_diastolic, has_ascvd, on_statin, has_diabetes, last_a1c, last_a1c_date, last_visit_date, payer")
+if "sel_clinics" not in st.session_state:
+    st.session_state.sel_clinics = clinic_param or all_clinics
+if "sel_measures" not in st.session_state:
+    st.session_state.sel_measures = all_measures
 
-file = st.file_uploader("Upload patient CSV", type=["csv"])
-with st.expander("Targets"):
-    target_cbp = st.number_input("CBP ≥", value=70.0, step=1.0)
-    target_sta = st.number_input("Statin (ASCVD) ≥", value=80.0, step=1.0)
-    target_dm  = st.number_input("Diabetes good control (≤9%) ≥", value=70.0, step=1.0)
+st.sidebar.header("Filters")
+st.sidebar.multiselect(
+    "Clinic(s)", options=all_clinics,
+    default=st.session_state.sel_clinics,
+    key="sel_clinics"
+)
+st.sidebar.multiselect(
+    "Measure(s)", options=all_measures,
+    default=st.session_state.sel_measures,
+    key="sel_measures"
+)
 
-if not file:
-    st.info("Tip: you can test with app/sample_data/patients_sample.csv")
-    st.stop()
+# --- Quick clinic chips (buttons) across the top ---
+st.markdown("#### Quick clinic filter")
+cols = st.columns(min(len(all_clinics), 6) or 1)
+for i, c in enumerate(all_clinics):
+    if cols[i % len(cols)].button(c):
+        st.session_state.sel_clinics = [c]
+        st.experimental_set_query_params(clinic=c)
+        st.experimental_rerun()
 
-df = pd.read_csv(file)
+# Reset button to show all
+if st.button("Show All Clinics"):
+    st.session_state.sel_clinics = all_clinics
+    st.experimental_set_query_params()  # clear query params
+    st.experimental_rerun()
 
-# Normalize
-for col in ["has_htn","has_ascvd","on_statin","has_diabetes"]:
-    if col in df.columns: df[col] = df[col].apply(yes)
-for col in ["last_bp_systolic","last_bp_diastolic","last_a1c"]:
-    if col in df.columns: df[col] = df[col].apply(safe_float)
+# --- Apply filters ---
+fdf = df[
+    df["clinic"].isin(st.session_state.sel_clinics)
+    & df["measure"].isin(st.session_state.sel_measures)
+].copy()
 
-required = ["patient_id","patient_name","provider","location"]
-missing = [c for c in required if c not in df.columns]
-if missing:
-    st.error(f"Missing required columns: {missing}")
-    st.stop()
+# --- KPIs ---
+col1,col2,col3 = st.columns(3)
+def pct(series): 
+    return f"{(series.mean()*100):.1f}%" if len(series) else "—"
+col1.metric("Hypertension Control",   pct(fdf.loc[fdf["measure"]=="HTN Control","compliant"]),       "Target: 90%")
+col2.metric("Statin Adherence",       pct(fdf.loc[fdf["measure"]=="Statin Adherence","compliant"]), "Target: 80%")
+col3.metric("30-Day Follow-Up",       pct(fdf.loc[fdf["measure"]=="30d Follow-up","compliant"]),    "Target: 75%")
 
-# ---- Measures (simple, spec-agnostic)
-cbp_den = df[df.get("has_htn", False) == True].copy()
-cbp_num = cbp_den[(cbp_den["last_bp_systolic"] < 140) & (cbp_den["last_bp_diastolic"] < 90)]
-cbp_rate = pct(len(cbp_num), len(cbp_den))
+st.divider()
 
-sta_den = df[df.get("has_ascvd", False) == True].copy()
-sta_num = sta_den[sta_den.get("on_statin", False) == True]
-sta_rate = pct(len(sta_num), len(sta_den))
+# --- Tabs ---
+tab1, tab2 = st.tabs(["📈 Trends","📋 Patient Detail"])
 
-dm_den = df[(df.get("has_diabetes", False) == True) & (df["last_a1c"].notna())].copy()
-dm_good = dm_den[dm_den["last_a1c"] <= 9.0]
-dm_good_rate = pct(len(dm_good), len(dm_den))
-
-def status(val, target): return "✅ On Track" if val >= target else "⚠️ Needs Attention"
-
-scorecard = pd.DataFrame([
-    {"Measure":"CBP (BP <140/90 among HTN)","Numerator":len(cbp_num),"Denominator":len(cbp_den),"Rate %":round(cbp_rate,1),"Target %":target_cbp,"Status":status(cbp_rate,target_cbp)},
-    {"Measure":"Statin (ASCVD on statin)","Numerator":len(sta_num),"Denominator":len(sta_den),"Rate %":round(sta_rate,1),"Target %":target_sta,"Status":status(sta_rate,target_sta)},
-    {"Measure":"Diabetes A1c Good Control (≤9%)","Numerator":len(dm_good),"Denominator":len(dm_den),"Rate %":round(dm_good_rate,1),"Target %":target_dm,"Status":status(dm_good_rate,target_dm)},
-])
-
-st.subheader("Practice Scorecard")
-st.dataframe(scorecard, hide_index=True, use_container_width=True)
-
-# ---- Provider drilldowns
-def group_rate(den_df, num_df):
-    if den_df.empty: return pd.DataFrame(columns=["Provider","Den","Num","Rate %"])
-    g = den_df.groupby("provider").size().rename("Den").to_frame()
-    n = num_df.groupby("provider").size().rename("Num").to_frame()
-    out = g.join(n, how="left").fillna(0)
-    out["Rate %"] = (out["Num"] / out["Den"] * 100).round(1)
-    return out.reset_index().rename(columns={"provider":"Provider"}).sort_values("Rate %", ascending=False)
-
-tab1, tab2, tab3 = st.tabs(["CBP","Statin","Diabetes"])
 with tab1:
-    st.dataframe(group_rate(cbp_den, cbp_num), use_container_width=True, hide_index=True)
+    st.subheader("Compliance Trends")
+    if not fdf.empty:
+        monthly = fdf.groupby([pd.Grouper(key="date", freq="M"),"measure"])["compliant"].mean().reset_index()
+        fig = px.line(monthly, x="date", y="compliant", color="measure", markers=True)
+        fig.update_yaxes(tickformat=".0%", range=[0,1])
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("No data for selected filters.")
+
 with tab2:
-    st.dataframe(group_rate(sta_den, sta_num), use_container_width=True, hide_index=True)
-with tab3:
-    st.dataframe(group_rate(dm_den, dm_good), use_container_width=True, hide_index=True)
+    st.subheader("Patient Table")
+    st.dataframe(fdf.sort_values("date", ascending=False), use_container_width=True)
 
-# ---- Gap lists + outreach buttons
-st.subheader("Gap Lists")
-
-cbp_gaps = cbp_den[~cbp_den["patient_id"].isin(cbp_num["patient_id"])][
-    ["patient_id","patient_name","provider","location","last_bp_systolic","last_bp_diastolic","phone","last_visit_date","payer"]
-].rename(columns={"last_bp_systolic":"systolic","last_bp_diastolic":"diastolic"})
-
-sta_gaps = sta_den[~sta_den["patient_id"].isin(sta_num["patient_id"])][
-    ["patient_id","patient_name","provider","location","on_statin","phone","last_visit_date","payer"]
-]
-
-dm_gaps = dm_den[~dm_den["patient_id"].isin(dm_good["patient_id"])][
-    ["patient_id","patient_name","provider","location","last_a1c","last_a1c_date","phone","last_visit_date","payer"]
-]
-
-def export_button(df_out, label):
-    csv = df_out.to_csv(index=False).encode("utf-8")
-    st.download_button(label=f"Download {label} (CSV)", data=csv, file_name=f"{label.replace(' ','_').lower()}.csv", mime="text/csv")
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown("**CBP (not controlled)**")
-    st.dataframe(cbp_gaps, use_container_width=True, hide_index=True)
-    if st.button("Send CBP outreach to all", key="send_cbp"):
-        count = 0
-        for pid in cbp_gaps["patient_id"].tolist():
-            if enqueue_outreach(pid, "CBP"): count += 1
-        st.success(f"Queued {count} CBP messages to Messaging Center.")
-    export_button(cbp_gaps, "CBP_Gap_List")
-
-with col2:
-    st.markdown("**Statin (ASCVD not on statin)**")
-    st.dataframe(sta_gaps, use_container_width=True, hide_index=True)
-    if st.button("Send Statin outreach to all", key="send_sta"):
-        count = 0
-        for pid in sta_gaps["patient_id"].tolist():
-            if enqueue_outreach(pid, "STATIN"): count += 1
-        st.success(f"Queued {count} Statin messages.")
-    export_button(sta_gaps, "Statin_Gap_List")
-
-with col3:
-    st.markdown("**Diabetes (A1c > 9%)**")
-    st.dataframe(dm_gaps, use_container_width=True, hide_index=True)
-    if st.button("Send Diabetes outreach to all", key="send_dm"):
-        count = 0
-        for pid in dm_gaps["patient_id"].tolist():
-            if enqueue_outreach(pid, "DM_A1C"): count += 1
-        st.success(f"Queued {count} Diabetes messages.")
-    export_button(dm_gaps, "Diabetes_Gap_List")
-
-st.caption("No PHI in SMS content; patients receive expiring magic links to a secure page.")
+st.caption("💡 Tip: You can deep-link filters, e.g., add ?clinic=Cedartown to the URL for a pre-filtered view.")
