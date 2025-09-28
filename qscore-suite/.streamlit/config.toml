@@ -1,0 +1,8 @@
+﻿[theme]
+# accessible, clinical palette (calm blues/greens)
+primaryColor="#2563EB"            # buttons, accents (blue-600)
+backgroundColor="#0B1220"         # app background: deep slate
+secondaryBackgroundColor="#111827" # cards/containers: near-black slate
+textColor="#E5E7EB"               # text: stone-200
+# Other allowed values: "sans serif", "serif", "monospace"
+font="sans serif"

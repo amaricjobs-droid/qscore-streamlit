@@ -1,0 +1,8 @@
+﻿patient_id,patient_name,provider,location,phone,has_htn,last_bp_systolic,last_bp_diastolic,has_ascvd,on_statin,has_diabetes,last_a1c,last_a1c_date,last_visit_date,payer
+1001,Rita Collins,S. Patel,Cedartown,(706)555-1188,TRUE,148,92,FALSE,FALSE,TRUE,8.7,2025-08-20,2025-06-10,Medicare
+1002,Daniel Wright,L. Gomez,Rockmart,(770)555-4421,TRUE,152,95,TRUE,FALSE,FALSE,,,
+1003,Chloe Nguyen,L. Gomez,Rome,(706)555-9923,TRUE,144,91,FALSE,FALSE,TRUE,10.2,2025-07-04,2025-05-19,BCBS
+1201,Oscar Reed,S. Patel,Rome,(706)555-8812,FALSE,, ,TRUE,FALSE,FALSE,,,
+1202,Tia Brooks,L. Gomez,Cedartown,(706)555-2231,FALSE,, ,TRUE,FALSE,FALSE,,,
+1301,Felix Moore,S. Patel,Rockmart,(770)555-1134,FALSE,, ,FALSE,FALSE,TRUE,10.1,2025-06-14,2025-04-22,Medicaid
+1302,Zoe Park,L. Gomez,Rome,(706)555-3318,FALSE,, ,FALSE,FALSE,TRUE,9.8,2025-07-04,2025-03-28,Humana

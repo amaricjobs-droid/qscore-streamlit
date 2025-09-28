@@ -1,0 +1,16 @@
+﻿patient_id,patient_name,provider,location,phone,has_htn,last_bp_systolic,last_bp_diastolic,has_ascvd,on_statin,has_diabetes,last_a1c,last_a1c_date,last_visit_date,payer
+1001,Rita Collins,S. Patel,Cedartown,(706)555-1188,TRUE,148,92,FALSE,FALSE,TRUE,8.7,2025-08-20,2025-06-10,Medicare
+1002,Daniel Wright,L. Gomez,Rockmart,(770)555-4421,TRUE,152,95,TRUE,FALSE,FALSE,, ,2025-05-28,BCBS
+1003,Chloe Nguyen,L. Gomez,Rome,(706)555-9923,TRUE,134,84,FALSE,FALSE,TRUE,10.2,2025-07-04,2025-05-19,BCBS
+1004,Maya Lopez,J. Rivera,Rome,(706)555-7711,FALSE,, ,TRUE,TRUE,FALSE,, ,2025-07-15,Humana
+1005,Ethan Harris,S. Patel,Cedartown,(706)555-6610,TRUE,, ,FALSE,FALSE,TRUE,7.8,2025-06-02,2025-04-10,Medicaid
+1006,Ava Thompson,J. Rivera,Rockmart,(770)555-1200,TRUE,138,88,TRUE,TRUE,FALSE,, ,2025-06-24,Medicare
+1007,Liam Brooks,L. Gomez,Cedartown,(706)555-2231,TRUE,142,91,TRUE,FALSE,TRUE,9.3,2025-08-01,2025-06-30,Humana
+1008,Noah Kim,S. Patel,Rome,(706)555-8812,FALSE,, ,FALSE,FALSE,TRUE,, ,2025-06-18,BCBS
+1009,Olivia Scott,J. Rivera,Rockmart,(770)555-3318,TRUE,139,85,TRUE,TRUE,FALSE,, ,2025-08-11,Medicare
+1010,Henry Turner,S. Patel,Cedartown,(706)555-4420,TRUE,160,100,TRUE,FALSE,FALSE,, ,2025-07-22,Medicaid
+1011,Grace Allen,L. Gomez,Rome,(706)555-5522,TRUE,130,82,FALSE,FALSE,TRUE,8.9,2025-08-10,2025-06-05,BCBS
+1012,Lucas Price,J. Rivera,Cedartown,(706)555-6633,TRUE,145,92,FALSE,FALSE,FALSE,, ,2025-05-03,Humana
+1013,Zoe Park,L. Gomez,Rome,(706)555-3318,FALSE,, ,FALSE,FALSE,TRUE,9.8,2025-07-04,2025-03-28,Humana
+1014,Felix Moore,S. Patel,Rockmart,(770)555-1134,FALSE,, ,FALSE,FALSE,TRUE,10.1,2025-06-14,2025-04-22,Medicaid
+1015,Oscar Reed,S. Patel,Rome,(706)555-8812,FALSE,, ,TRUE,FALSE,FALSE,, ,2025-06-01,Medicare
