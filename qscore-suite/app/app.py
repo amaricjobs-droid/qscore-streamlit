@@ -80,7 +80,7 @@ with home_tab:
 
     cols = st.columns(min(len(all_clinics), 6) or 1)
     for i, c in enumerate(all_clinics):
-        cols[i % len(cols)].button(f"Open Dashboard: {c}", key=f"home
+        cols[i % len(cols)].button(f"Open Dashboard: {c}", key=f"home_{c}", on_click=_home_set_clinic, args=(c,))
 C:\Users\Amari\qscore-suite\qscore-suite\app\app.py = "C:\Users\Amari\qscore-suite\qscore-suite\app\app.py"
 
 @"
@@ -284,4 +284,5 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
 
