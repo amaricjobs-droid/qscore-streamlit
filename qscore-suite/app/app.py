@@ -5,6 +5,21 @@ import streamlit as st
 # -------- Page & Brand --------
 st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
 st.title("📊 Nexa Quality Measure Dashboard")
+
+st.markdown("""
+<style>
+.nexa-header {
+  display:flex; align-items:center; gap:.75rem; padding:.5rem .75rem; 
+  border-radius:12px; background:var(--secondary-background-color);
+}
+.nexa-header img { height:28px; }
+.nexa-header h2 { margin:0; font-size:1.05rem; }
+</style>
+<div class="nexa-header">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/OOjs_UI_icon_article-ltr.svg">
+  <h2>Nexa Quality Suite</h2>
+</div>
+""", unsafe_allow_html=True)
 st.caption("A client-ready experience with clear navigation, patient messaging, uploads, and dashboards.")
 
 # -------- Demo/base data --------
@@ -76,6 +91,21 @@ import streamlit as st
 # -------- Page & Brand --------
 st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
 st.title("📊 Nexa Quality Measure Dashboard")
+
+st.markdown("""
+<style>
+.nexa-header {
+  display:flex; align-items:center; gap:.75rem; padding:.5rem .75rem; 
+  border-radius:12px; background:var(--secondary-background-color);
+}
+.nexa-header img { height:28px; }
+.nexa-header h2 { margin:0; font-size:1.05rem; }
+</style>
+<div class="nexa-header">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/OOjs_UI_icon_article-ltr.svg">
+  <h2>Nexa Quality Suite</h2>
+</div>
+""", unsafe_allow_html=True)
 st.caption("A client-ready experience with clear navigation, patient messaging, uploads, and dashboards.")
 
 # -------- Demo/base data --------
@@ -254,3 +284,4 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
