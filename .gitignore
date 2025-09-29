@@ -4,3 +4,5 @@ __pycache__/
 *.sqlite3
 .env
 .streamlit/secrets.toml
+qscore-suite/app/logs/*.csv
+qscore-suite/app/logs/*.log

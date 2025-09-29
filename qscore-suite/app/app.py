@@ -114,8 +114,8 @@ def _home_set_clinic(c: str):
     st.rerun()
 
 # -------- Top Navigation (tabs as top bar) --------
-home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
-    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
+home_tab, dash_tab, upload_tab, msg_tab, reports_tab, logs_tab, help_tab = st.tabs(
+    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "🧾 Logs", "❓ Help"]
 )
 
 # ============== HOME ==============
@@ -330,7 +330,65 @@ with reports_tab:
     else:
         st.info("No data for current filters to export.")
 
-# ============== HELP ==================
+# ============== LOGS ==============
+with logs_tab:
+    st.subheader("Message & Click Logs")
+
+    import os
+    LOGS_DIR = os.path.join(os.path.dirname(__file__), "logs")
+    msgs_path = os.path.join(LOGS_DIR, "messages.csv")
+    clicks_path = os.path.join(LOGS_DIR, "clicks.csv")
+
+    def _read_csv_safe(p):
+        try:
+            if os.path.exists(p):
+                return pd.read_csv(p)
+        except Exception:
+            return None
+        return None
+
+    mdf = _read_csv_safe(msgs_path)    # messages
+    cdf = _read_csv_safe(clicks_path)  # clicks
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Messages log**")
+        if mdf is not None and not mdf.empty:
+            st.dataframe(mdf.tail(500), use_container_width=True, height=300)
+            _csv = mdf.to_csv(index=False).encode("utf-8")
+            st.download_button("Download messages.csv", _csv, file_name="messages.csv", mime="text/csv")
+        else:
+            st.info("No messages logged yet.")
+
+    with col2:
+        st.markdown("**Clicks log**")
+        if cdf is not None and not cdf.empty:
+            st.dataframe(cdf.tail(500), use_container_width=True, height=300)
+            _csv2 = cdf.to_csv(index=False).encode("utf-8")
+            st.download_button("Download clicks.csv", _csv2, file_name="clicks.csv", mime="text/csv")
+        else:
+            st.info("No clicks logged yet.")
+
+    st.divider()
+    st.subheader("Summary")
+    total_sent = len(mdf) if mdf is not None else 0
+    total_clicks = len(cdf) if cdf is not None else 0
+    ctr = (total_clicks / total_sent * 100) if total_sent else 0.0
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Messages queued", f"{total_sent}")
+    m2.metric("Clicks", f"{total_clicks}")
+    m3.metric("Click-through rate", f"{ctr:.1f}%")
+
+    # Clicks over time (daily)
+    if cdf is not None and not cdf.empty and "ts" in cdf.columns:
+        try:
+            cdf["ts"] = pd.to_datetime(cdf["ts"], errors="coerce")
+            daily = cdf.groupby(pd.Grouper(key="ts", freq="D")).size().reset_index(name="clicks")
+            fig = px.bar(daily, x="ts", y="clicks")
+            st.plotly_chart(fig, use_container_width=True)
+        except Exception:
+            pass
+# ============== HELP ======================
 with help_tab:
     st.subheader("Help & Support")
     st.markdown("""
@@ -342,6 +400,7 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
 
 
 
