@@ -1,145 +1,251 @@
-﻿import streamlit as st
-import pandas as pd
+﻿import pandas as pd
 import plotly.express as px
+import streamlit as st
 
-# ------------ Page config / Branding ------------
-st.set_page_config(page_title="Nexa Q-Score", page_icon="📊", layout="wide")
-st.title("📊 Nexa Q-Score")
-st.caption("Upload → Filter → Insights → (Simulated) Messaging → Export")
+# ============== CONFIG: official measures & goals (EDIT HERE) ==============
+MEASURE_WHITELIST = [
+    "Hemoglobin A1c Control <8",
+    "Kidney Eval: eGFR",
+    "Kidney Eval: ACR",
+    "High Blood Pressure Control <140/90",
+    "Breast Cancer Screening",
+    "CAD/IVD Statin Therapy (SPC)",
+    "Diabetes Statin Therapy (SUPD)",
+    "Childhood Immunization Status (Combo 7)",
+    "Well Care Visit 3–21 Years Old",
+]
 
-# ------------ Base demo data ------------
+# Targets & Stretch as proportions (0.716 = 71.6%)
+TARGETS = {
+    "Hemoglobin A1c Control <8": (0.716, 0.750),  # from your scorecard (Dec sheet)
+    "Kidney Eval: eGFR": (0.750, 0.800),
+    "Kidney Eval: ACR": (0.720, 0.760),
+    "High Blood Pressure Control <140/90": (0.700, 0.750),
+    "Breast Cancer Screening": (0.640, 0.680),
+    "CAD/IVD Statin Therapy (SPC)": (0.830, 0.860),
+    "Diabetes Statin Therapy (SUPD)": (0.780, 0.820),
+    "Childhood Immunization Status (Combo 7)": (0.600, 0.650),
+    "Well Care Visit 3–21 Years Old": (0.600, 0.650),
+}
+
+# ============== PAGE & BRAND ==============
+st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
+st.title("📊 Nexa Quality Measure Dashboard")
+st.caption("Official measures only • Targets & Stretch displayed • Whole percent formatting")
+
+# ============== DEMO/BASE DATA (replace during Upload tab) ==============
 def load_base_data():
     data = {
         "patient_id": [101,102,103,104,105,106,107,108,109,110],
-        "clinic": ["Cedartown","Rockmart","Rome","Rome","Cartersville",
-                   "Cedartown","Rockmart","Cartersville","Rome","Cedartown"],
-        "measure": ["HTN Control","Statin Adherence","30d Follow-up","HTN Control",
-                    "Statin Adherence","HTN Control","30d Follow-up",
-                    "HTN Control","Statin Adherence","30d Follow-up"],
-        "value": [0.82,0.76,0.68,0.91,0.85,0.88,0.71,0.93,0.79,0.83],
+        "clinic": ["Cedartown","Rockmart","Rome","Rome","Cartersville","Cedartown","Rockmart","Cartersville","Rome","Cedartown"],
+        "measure": [
+            "Hemoglobin A1c Control <8","Diabetes Statin Therapy (SUPD)","High Blood Pressure Control <140/90",
+            "Hemoglobin A1c Control <8","CAD/IVD Statin Therapy (SPC)","Hemoglobin A1c Control <8",
+            "Breast Cancer Screening","Kidney Eval: eGFR","Kidney Eval: ACR","Well Care Visit 3–21 Years Old",
+        ],
+        # 'value' is a per-patient measure score (0..1). We'll compute compliant against TARGETS per measure.
+        "value": [0.82,0.76,0.68,0.91,0.85,0.88,0.71,0.79,0.83,0.60],
         "date": pd.date_range("2025-01-01", periods=10, freq="M")
     }
-    df = pd.DataFrame(data)
-    df["compliant"] = df["value"] >= 0.8
-    return df
+    return pd.DataFrame(data)
 
-# Keep a working copy in session; uploads can replace it for this session only
 if "dataframe" not in st.session_state:
     st.session_state.dataframe = load_base_data()
 
 df = st.session_state.dataframe.copy()
 
-# ------------ Sidebar Filters ------------
-with st.sidebar:
-    st.subheader("Filters")
-    clinics = sorted(df["clinic"].unique().tolist())
-    measures = sorted(df["measure"].unique().tolist())
+# ================== FILTER TO OFFICIAL MEASURES & RECOMPUTE COMPLIANCE ==================
+# Drop anything not on the whitelist (e.g., 30-day follow-up)
+df = df[df["measure"].isin(MEASURE_WHITELIST)].copy()
 
-    sel_clinics = st.multiselect("Clinics", clinics, default=clinics)
-    sel_measures = st.multiselect("Measures", measures, default=measures)
-    only_noncompliant = st.checkbox("Only non-compliant", value=False)
+# If date exists, ensure datetime
+if "date" in df.columns:
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
-# Apply filters
-fdf = df[df["clinic"].isin(sel_clinics) & df["measure"].isin(sel_measures)]
-if only_noncompliant:
-    fdf = fdf[~fdf["compliant"]]
+# Recompute "compliant" using per-measure TARGET threshold when available
+def row_compliant(row):
+    m = row.get("measure")
+    v = row.get("value")
+    if pd.isna(v) or m not in TARGETS: 
+        return row.get("compliant", False)
+    target, _ = TARGETS[m]
+    try:
+        return float(v) >= float(target)
+    except Exception:
+        return False
 
-# ------------ Navigation ------------
-tabs = st.tabs(["🏠 Dashboard", "📤 Upload Data", "✉️ Messaging (Demo)", "📄 Reports"])
+df["compliant"] = df.apply(row_compliant, axis=1)
 
-# ------------ Dashboard ------------
-with tabs[0]:
-    st.subheader("Quality Overview")
+# Detect clinics & measures from the filtered data
+all_clinics  = sorted(df["clinic"].dropna().unique().tolist()) if "clinic" in df.columns else []
+all_measures = [m for m in MEASURE_WHITELIST if m in df["measure"].unique()]
 
-    # KPIs
-    total = len(fdf)
-    compliant = int(fdf["compliant"].sum())
-    rate = (compliant / total * 100) if total else 0.0
+# ============== NAV ==============
+home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
+    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
+)
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Total Patients", total)
-    c2.metric("Compliant", compliant)
-    c3.metric("Compliance Rate", f"{rate:.1f}%")
+# Helper: format %
+def pct_str(x: float | int | None) -> str:
+    if x is None or pd.isna(x): return "—"
+    try: return f"{round(100*float(x))}%"
+    except: return "—"
 
-    # Trend chart
-    if not fdf.empty:
-        agg = (fdf.groupby(["date","measure"], as_index=False)
-                  .agg(value=("value","mean")))
-        fig = px.line(agg, x="date", y="value", color="measure", markers=True,
-                      title="Measure Trend (mean value by month)")
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("No rows match the current filters.")
+# Helper: apply filters
+def apply_filters(_df, clinics, measures):
+    return _df[_df["clinic"].isin(clinics) & _df["measure"].isin(measures)].copy()
 
-    st.dataframe(fdf, use_container_width=True)
+# ============== HOME ==============
+with home_tab:
+    st.subheader("Welcome")
+    st.write("This view shows only your official measures. Targets & Stretch are applied per measure, and all charts display whole percentages.")
+    st.markdown("**Tracked measures:**")
+    st.write(", ".join(all_measures) if all_measures else "_No measures present in the data_")
 
-# ------------ Upload ------------
-with tabs[1]:
-    st.subheader("Upload CSV/XLSX")
-    st.write("Required columns (example): `patient_id`, `clinic`, `measure`, `value`, `date`")
-    up = st.file_uploader("Choose a file", type=["csv","xlsx"])
-    if up is not None:
+    st.divider()
+    st.subheader("Quick Clinics")
+    def _home_set_clinic(c: str):
+        st.query_params.update({"clinic": c})
+        st.session_state["dash_sel_clinics"] = [c]
+        st.toast(f"Clinic set to {c}. Open the 📊 Dashboard tab.")
+        st.rerun()
+    cols = st.columns(min(len(all_clinics), 6) or 1)
+    for i, c in enumerate(all_clinics):
+        cols[i % len(cols)].button(f"Open Dashboard: {c}", key=f"home_{c}", on_click=_home_set_clinic, args=(c,))
+
+# ============== DASHBOARD ==============
+with dash_tab:
+    st.subheader("Dashboard")
+    params = st.query_params
+    clinic_param = params.get("clinic", None)
+
+    if "dash_sel_clinics" not in st.session_state:
+        st.session_state.dash_sel_clinics = [clinic_param] if clinic_param in all_clinics else all_clinics
+    if "dash_sel_measures" not in st.session_state:
+        st.session_state.dash_sel_measures = all_measures
+
+    st.sidebar.header("Dashboard Filters")
+    st.sidebar.multiselect("Clinic(s)", all_clinics, default=st.session_state.dash_sel_clinics, key="dash_sel_clinics")
+    st.sidebar.multiselect("Measure(s)", all_measures, default=st.session_state.dash_sel_measures, key="dash_sel_measures")
+
+    fdf = apply_filters(df, st.session_state.dash_sel_clinics, st.session_state.dash_sel_measures)
+
+    # ===== KPI ROW: build dynamically from whitelisted measures =====
+    st.markdown("#### Scorecard")
+    # Compute per-measure current compliance (% meeting target)
+    kpi_cols = st.columns(3)
+    for idx, m in enumerate(all_measures[:9]):  # show up to 9 in 3 rows if needed
+        col = kpi_cols[idx % 3]
+        sub = fdf[fdf["measure"] == m]
+        rate = float(sub["compliant"].mean()) if not sub.empty else None
+        target, stretch = TARGETS.get(m, (None, None))
+        label = m
+        delta = " | ".join([f"Target: {pct_str(target)}", f"Stretch: {pct_str(stretch)}"])
+        col.metric(label, pct_str(rate), delta)
+
+        if idx % 3 == 2 and idx < len(all_measures)-1:
+            kpi_cols = st.columns(3)
+
+    st.divider()
+    t1, t2 = st.tabs(["📈 Trends", "📋 Patient Table"])
+    with t1:
+        if not fdf.empty and "date" in fdf.columns:
+            monthly = (
+                fdf.assign(month=fdf["date"].dt.to_period("M").dt.to_timestamp())
+                   .groupby(["month","measure"])["compliant"]
+                   .mean()
+                   .reset_index()
+            )
+            fig = px.line(monthly, x="month", y="compliant", color="measure", markers=True)
+            fig.update_yaxes(tickformat=".0%", range=[0,1])
+            fig.update_layout(yaxis_tickformat="%", yaxis=dict(ticksuffix=""))  # keep chart in %
+            st.plotly_chart(fig, use_container_width=True, theme="streamlit")
+        else:
+            st.info("No data for selected filters.")
+    with t2:
+        show_cols = [c for c in ["patient_id","clinic","measure","value","compliant","date"] if c in fdf.columns]
+        st.dataframe(fdf.sort_values("date", ascending=False)[show_cols], use_container_width=True, height=460)
+
+# ============== UPLOAD DATA ============
+with upload_tab:
+    st.subheader("Upload CSV (session-only)")
+    st.markdown("""
+Your CSV must include: **patient_id, clinic, measure, value, date** (and optionally **compliant**).  
+Rows with measures not in the official list will be ignored. Compliance is recomputed using per-measure **Target**.
+""")
+    file = st.file_uploader("Choose CSV file", type=["csv"])
+    if file:
         try:
-            if up.name.lower().endswith(".csv"):
-                nd = pd.read_csv(up)
-            else:
-                nd = pd.read_excel(up)
-
-            # Light coercion
-            needed = {"patient_id","clinic","measure","value","date"}
-            missing = needed - set(map(str.lower, nd.columns.str.lower()))
-            if missing:
-                st.error(f"Missing columns: {sorted(list(missing))}")
-            else:
-                # Normalize column names
-                nd.columns = [c.strip().lower() for c in nd.columns]
-                nd.rename(columns={
-                    "patient_id":"patient_id",
-                    "clinic":"clinic",
-                    "measure":"measure",
-                    "value":"value",
-                    "date":"date",
-                }, inplace=True)
-
-                # Parse types
-                nd["date"] = pd.to_datetime(nd["date"], errors="coerce")
-                nd["compliant"] = nd["value"] >= 0.8
-
-                st.session_state.dataframe = nd.rename(columns=str)  # keep simple names
-                st.success("Data uploaded for this session.")
+            new_df = pd.read_csv(file)
+            if "date" in new_df.columns:
+                new_df["date"] = pd.to_datetime(new_df["date"], errors="coerce")
+            # filter to official measures
+            new_df = new_df[new_df["measure"].isin(MEASURE_WHITELIST)].copy()
+            # recompute compliant from TARGETS
+            def _comp(row):
+                m, v = row.get("measure"), row.get("value")
+                if pd.isna(v) or m not in TARGETS: return False
+                t, _ = TARGETS[m]
+                try: return float(v) >= float(t)
+                except: return False
+            new_df["compliant"] = new_df.apply(_comp, axis=1)
+            st.session_state.dataframe = new_df.dropna(subset=["clinic","measure"])
+            st.success("Upload successful. Data replaced for this session.")
+            st.rerun()
         except Exception as e:
-            st.error(f"Upload failed: {e}")
+            st.error(f"Could not read CSV: {e}")
 
-# ------------ Messaging (Demo only) ------------
-with tabs[2]:
-    st.subheader("Patient Messaging (Demo)")
-    st.info("This demo simulates sending reminders. No real SMS/Email is sent.")
-    st.caption("In production, wire Twilio/SendGrid using secrets.")
+# ============== MESSAGE PATIENTS (demo) ============
+with msg_tab:
+    st.subheader("Message Patients (demo)")
+    if "msg_sel_clinics" not in st.session_state:
+        st.session_state.msg_sel_clinics = all_clinics
+    if "msg_sel_measures" not in st.session_state:
+        st.session_state.msg_sel_measures = all_measures
 
-    # Choose a template and preview links (mock)
-    default_templates = {
-        "HTN Reminder": "Hello {patient_id}, your blood pressure needs follow-up for {clinic}. Please schedule: {link}",
-        "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. Schedule: {link}",
-        "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up for {clinic}. Start here: {link}",
-    }
-    template_name = st.selectbox("Template", list(default_templates.keys()))
-    template_body = st.text_area("Message", value=default_templates[template_name], height=120)
+    st.sidebar.header("Messaging Filters")
+    st.sidebar.multiselect("Clinic(s) (Messaging)", all_clinics, default=st.session_state.msg_sel_clinics, key="msg_sel_clinics")
+    st.sidebar.multiselect("Measure(s) (Messaging)", all_measures, default=st.session_state.msg_sel_measures, key="msg_sel_measures")
+    include_only_noncompliant = st.sidebar.checkbox("Only non-compliant patients", value=True)
 
-    # Choose recipients (filtered view)
-    rec_df = fdf.copy()
-    st.write(f"Recipients shown below ({len(rec_df)} rows):")
-    st.dataframe(rec_df[["patient_id","clinic","measure","value","compliant"]], use_container_width=True)
+    mdf = apply_filters(df, st.session_state.msg_sel_clinics, st.session_state.msg_sel_measures)
+    if include_only_noncompliant and "compliant" in mdf.columns:
+        mdf = mdf[~mdf["compliant"].fillna(False)]
 
-    # Simulated send
-    if st.button("🚀 Queue Messages (Demo)"):
-        st.success(f"Queued {len(rec_df)} messages (demo).")
-        st.toast("Messages queued (demo)")
+    left, right = st.columns([2,1])
+    with left:
+        st.markdown("**Recipients (preview)**")
+        preview_cols = [c for c in ["patient_id","clinic","measure","date","compliant"] if c in mdf.columns]
+        st.dataframe(mdf[preview_cols].head(200), use_container_width=True, height=360)
+    with right:
+        st.markdown("**Compose Message**")
+        st.text_area("Template", value="Hello! Our records show you may be due for follow-up. Please contact our clinic to schedule.", height=140)
+        st.caption("Placeholders coming soon: `{patient_id}`, `{clinic}`, `{measure}`")
+        st.metric("Recipients to send", len(mdf))
+        if st.button("Send Messages", type="primary"):
+            st.success(f"Queued {len(mdf)} messages. (Demo only)")
+            st.toast("Messages queued (demo)")
 
-# ------------ Reports / Export ------------
-with tabs[3]:
-    st.subheader("Export")
-    if not fdf.empty:
-        csv = fdf.to_csv(index=False).encode("utf-8")
-        st.download_button("Download filtered CSV", data=csv, file_name="qscore_filtered.csv", mime="text/csv")
+# ============== REPORTS ============
+with reports_tab:
+    st.subheader("Reports & Exports")
+    filt_clin = st.session_state.get("dash_sel_clinics", all_clinics)
+    filt_meas = st.session_state.get("dash_sel_measures", all_measures)
+    rdf = apply_filters(df, filt_clin, filt_meas)
+    if not rdf.empty:
+        csv = rdf.to_csv(index=False).encode("utf-8")
+        st.download_button("Download CSV", csv, file_name="nexa_export.csv", mime="text/csv")
     else:
-        st.info("Apply filters to generate a report.")
+        st.info("No data for current filters to export.")
+
+# ============== HELP ============
+with help_tab:
+    st.subheader("Help & Support")
+    st.markdown("""
+**What you see**
+- Only official Population Health measures are included.
+- **Target** and **Stretch** thresholds are applied per measure.
+- All percentages are formatted as whole numbers (e.g., 72%).
+
+**Need updates?** Edit the `TARGETS` dict at the top of this file to match your scorecard for each measure.
+""")
