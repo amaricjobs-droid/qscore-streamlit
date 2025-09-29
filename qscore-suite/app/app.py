@@ -258,7 +258,7 @@ template = st.text_area("Template", value=templates[selected_template], height=1
 if st.button("💾 Save Template"):
     templates[selected_template] = template
     save_templates(templates)
-    st.success(f"Template \"{selected_template}\" saved!"), your blood pressure needs follow-up for {clinic}. {link}",
+    st.success(f"Template \"{selected_template}\" saved!")
         "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. {link}",
         "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up visit for {clinic}. {link}"
     }
@@ -272,7 +272,7 @@ template = st.text_area("Template", value=templates[selected_template], height=1
 if st.button("💾 Save Template"):
     templates[selected_template] = template
     save_templates(templates)
-    st.success(f"Template \"{selected_template}\" saved!"), your blood pressure needs follow-up for {clinic}. {link}",
+    st.success(f"Template \"{selected_template}\" saved!")
         "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. {link}",
         "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up visit for {clinic}. {link}"
     }
@@ -410,6 +410,7 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
 
 
 
