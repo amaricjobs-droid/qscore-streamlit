@@ -88,6 +88,9 @@ def load_base_data():
         "measure": ["HTN Control","Statin Adherence","30d Follow-up","HTN Control","Statin Adherence","HTN Control","30d Follow-up","HTN Control","Statin Adherence","30d Follow-up"],
         "value": [0.82,0.76,0.68,0.91,0.85,0.88,0.71,0.93,0.79,0.83],
         "date": pd.date_range("2025-01-01", periods=10, freq="M")
+    }
+    }
+    }
     df = pd.DataFrame(data)
     df["compliant"] = df["value"] >= 0.8
     return df
