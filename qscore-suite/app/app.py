@@ -1,6 +1,32 @@
 ﻿import pandas as pd
 import plotly.express as px
 import streamlit as st
+
+# --- robust local module loader (no sys.path/package needed) ---
+import importlib.util, pathlib
+
+_CURR = pathlib.Path(__file__).resolve()
+_QS   = _CURR.parent.parent  # .../qscore-suite
+
+def _load_module(name:str, path:pathlib.Path):
+    spec = importlib.util.spec_from_file_location(name, str(path))
+    mod  = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore
+    return mod
+
+_store_mod     = _load_module("store",     _QS / "db" / "store.py")
+_messaging_mod = _load_module("messaging", _QS / "services" / "messaging.py")
+
+# Pull the symbols we use
+ensure_schema              = _store_mod.ensure_schema
+log_outreach               = _store_mod.log_outreach
+get_engine                 = getattr(_store_mod, "get_engine", None)
+ensure_schema_all          = getattr(_store_mod, "ensure_schema_all", ensure_schema)
+seed_demo_data             = getattr(_store_mod, "seed_demo_data", lambda: None)
+create_appointment_from_outreach = getattr(_store_mod, "create_appointment_from_outreach", lambda *_a, **_k: None)
+
+send_sms    = _messaging_mod.send_sms
+send_email  = _messaging_mod.send_email
 # --- make local packages importable ---
 import sys, pathlib
 _CURR = pathlib.Path(__file__).resolve()
@@ -12,8 +38,6 @@ for p in [str(_REPO), str(_QS_DIR)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from db.store import ensure_schema, log_outreach, get_engine, ensure_schema_all, seed_demo_data, create_appointment_from_outreach
-from services.messaging import send_sms, send_email
 # --- make local packages importable (qscore-suite/) ---
 import sys, pathlib
 _ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -379,5 +403,6 @@ with msg_tab:
         st.dataframe(appt_df, use_container_width=True, height=240)
     else:
         st.info("No appointments recorded yet.")
+
 
 
