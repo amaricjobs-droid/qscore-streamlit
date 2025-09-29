@@ -1,6 +1,6 @@
 ﻿import pandas as pd
 import plotly.express as px
-import streamlit as st
+import streamlit as st\nfrom qscore_suite.db.store import ensure_schema, log_outreach\nfrom qscore_suite.services.messaging import send_sms, send_email
 
 # ============== CONFIG: official measures & goals (EDIT HERE) ==============
 MEASURE_WHITELIST = [
@@ -249,3 +249,10 @@ with help_tab:
 
 **Need updates?** Edit the `TARGETS` dict at the top of this file to match your scorecard for each measure.
 """)
+
+def _best_contact(row):
+    # In real use, pull from your patient master table. For demo, fabricate placeholders by patient_id.
+    pid = str(row.get("patient_id",""))
+    phone = f"+1555{pid[-7:]}" if pid else None
+    email = f"patient{pid}@example.com" if pid else None
+    return phone, email
