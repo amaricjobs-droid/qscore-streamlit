@@ -185,7 +185,23 @@ with msg_tab:
     }
 
     selected_template = st.selectbox("Choose a template", list(templates.keys()))
+    
+    # ====== Messaging Templates + Preview ======
+    templates = {
+        "HTN Reminder": "Hello {patient_id}, your blood pressure needs follow-up for {clinic}. {link}",
+        "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. {link}",
+        "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up visit for {clinic}. {link}"
+    }
+
+    selected_template = st.selectbox("Choose a template", list(templates.keys()))
     template = st.text_area("Template", value=templates[selected_template], height=120)
+
+    # Live preview
+    if not mdf.empty:
+        r0 = mdf.iloc[0]
+        preview_link = build_link(r0.get("patient_id",""), r0.get("clinic",""), r0.get("measure",""))
+        preview_text = render_template(template, r0, preview_link)
+        st.info(f"**Preview:** {preview_text}")
 
     # Live preview
     if not mdf.empty:
@@ -226,5 +242,6 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
 
 
