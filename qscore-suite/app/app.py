@@ -1,9 +1,14 @@
 ﻿import pandas as pd
 import plotly.express as px
 import streamlit as st
-from qscore_suite.db.store import ensure_schema, log_outreach
-from qscore_suite.services.messaging import send_sms, send_email
+# --- make local packages importable ---
+import sys, pathlib
+_ROOT = pathlib.Path(__file__).resolve().parent.parent  # points to qscore-suite/
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
+from db.store import ensure_schema, log_outreach
+from services.messaging import send_sms, send_email
 # ============== CONFIG: official measures & goals (EDIT HERE) ==============
 MEASURE_WHITELIST = [
     "Hemoglobin A1c Control <8",
@@ -258,4 +263,5 @@ def _best_contact(row):
     phone = f"+1555{pid[-7:]}" if pid else None
     email = f"patient{pid}@example.com" if pid else None
     return phone, email
+
 
