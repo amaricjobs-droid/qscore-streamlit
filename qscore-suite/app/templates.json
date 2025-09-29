@@ -1,0 +1,5 @@
+﻿{
+  "HTN Reminder": "Hello {patient_id}, your blood pressure needs follow-up for {clinic}. {link}",
+  "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. {link}",
+  "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up visit for {clinic}. {link}"
+}

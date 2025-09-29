@@ -259,8 +259,8 @@ if st.button("💾 Save Template"):
     templates[selected_template] = template
     save_templates(templates)
     st.success(f"Template \"{selected_template}\" saved!")
-        "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. {link}",
-        "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up visit for {clinic}. {link}"
+        
+        
     }
 
     selected_template = st.selectbox("Choose a template", list(templates.keys()))
@@ -273,8 +273,8 @@ if st.button("💾 Save Template"):
     templates[selected_template] = template
     save_templates(templates)
     st.success(f"Template \"{selected_template}\" saved!")
-        "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. {link}",
-        "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up visit for {clinic}. {link}"
+        
+        
     }
 
     selected_template = st.selectbox("Choose a template", list(templates.keys()))
@@ -410,6 +410,7 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
 
 
 
