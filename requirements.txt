@@ -2,3 +2,7 @@
 pandas
 plotly
 numpy
+SQLAlchemy
+psycopg2-binary
+twilio
+sendgrid
