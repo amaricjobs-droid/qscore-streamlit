@@ -72,6 +72,28 @@ with home_tab:
             args=(c,)
         )
 
+# ====== KPI Row ======
+if 'df' in locals() and not df.empty:
+    kcol1, kcol2, kcol3 = st.columns(3)
+    with kcol1:
+        htn_rate = (df[df['measure']=="HTN"]["compliant"].mean()*100).round(1) if "measure" in df else 0
+        st.metric("Hypertension Control", f"{htn_rate}%", "Target: 90%")
+
+    with kcol2:
+        statin_rate = (df[df['measure']=="Statin"]["compliant"].mean()*100).round(1) if "measure" in df else 0
+        st.metric("Statin Adherence", f"{statin_rate}%", "Target: 85%")
+
+    with kcol3:
+        fu30_rate = (df[df['measure']=="FollowUp30"]["compliant"].mean()*100).round(1) if "measure" in df else 0
+        st.metric("30-Day FU", f"{fu30_rate}%", "Target: 95%")
+
+    # ====== Export Button ======
+    st.download_button(
+        "⬇️ Export Filtered Data",
+        df.to_csv(index=False).encode("utf-8"),
+        file_name="qscore_export.csv",
+        mime="text/csv"
+    )
 # ============== DASHBOARD ==============
 with dash_tab:
     st.subheader("Dashboard")
@@ -154,7 +176,23 @@ with msg_tab:
         st.dataframe(mdf[preview_cols].head(100), use_container_width=True, height=360)
     with right:
         st.markdown("**Compose Message**")
-        template = st.text_area("Template", value="Hello! Our records show you may be due for follow-up on your health measure. Please contact our clinic to schedule.", height=140)
+        
+    # ====== Messaging Templates + Preview ======
+    templates = {
+        "HTN Reminder": "Hello {patient_id}, your blood pressure needs follow-up for {clinic}. {link}",
+        "Statin Reminder": "Hello {patient_id}, please continue your statin therapy for {clinic}. {link}",
+        "Follow-Up 30d": "Hello {patient_id}, please schedule your 30-day follow-up visit for {clinic}. {link}"
+    }
+
+    selected_template = st.selectbox("Choose a template", list(templates.keys()))
+    template = st.text_area("Template", value=templates[selected_template], height=120)
+
+    # Live preview
+    if not mdf.empty:
+        r0 = mdf.iloc[0]
+        preview_link = build_link(r0.get("patient_id",""), r0.get("clinic",""), r0.get("measure",""))
+        preview_text = render_template(template, r0, preview_link)
+        st.info(f"**Preview:** {preview_text}")
         st.caption("Placeholders coming soon: {patient_id}, {clinic}, {measure}")
         count = len(mdf)
         st.metric("Recipients to send", count)
@@ -188,3 +226,5 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
+
