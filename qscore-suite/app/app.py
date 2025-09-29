@@ -2,10 +2,84 @@
 import plotly.express as px
 import streamlit as st
 
+
+# ---------- Audit logging & click-tracking helpers ----------
+import os, csv
+from datetime import datetime
+from urllib.parse import urlencode, quote, unquote
+
+LOGS_DIR = os.path.join(os.path.dirname(__file__), "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+def _log_row(filename: str, row: dict):
+    """Append a row to a CSV file in app/logs."""
+    path = os.path.join(LOGS_DIR, filename)
+    row = {k: ("" if v is None else str(v)) for k, v in row.items()}
+    write_header = not os.path.exists(path)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=row.keys())
+        if write_header:
+            w.writeheader()
+        w.writerow(row)
+
+def tracking_link(patient_id: str, clinic: str, measure: str, target_url: str = "") -> str:
+    """Return an internal link that records the click before sending to the real portal."""
+    # Relative link keeps it portable on Cloud and local
+    q = {
+        "portal": "1",
+        "pid": str(patient_id),
+        "clinic": clinic,
+        "measure": measure,
+    }
+    if target_url:
+        q["next"] = target_url
+    return "./?" + urlencode(q, doseq=False)
+
+def resolve_portal_target(clinic: str, patient_id: str, measure: str) -> str:
+    """Pick the clinic-specific portal if present; else LINK_BASE; else empty."""
+    try:
+        mapping = st.secrets.get("CLINIC_LINKS", {})
+        base = mapping.get(clinic, "")
+    except Exception:
+        base = ""
+    if not base:
+        base = st.secrets.get("LINK_BASE", "")
+    if not base:
+        return ""
+    # Non-PHI context params (avoid names/DOB/etc.)
+    extra = {"pid": str(patient_id), "clinic": clinic, "measure": measure, "src": "nexa-app"}
+    sep = "?" if "?" not in base else "&"
+    return base + sep + urlencode(extra, doseq=False)
 # -------- Page & Brand --------
 st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
 st.title("📊 Nexa Quality Measure Dashboard")
 st.caption("Client-ready navigation • Patient Messaging • Upload • KPIs • Trends • Exports")
+# ---------- Portal landing (click-tracking & forward) ----------
+_q = st.query_params
+if _q.get("portal", None) == "1":
+    pid     = _q.get("pid", "")
+    clinic  = _q.get("clinic", "")
+    measure = _q.get("measure", "")
+    nxt     = _q.get("next", "")
+
+    # Log the click
+    _log_row("clicks.csv", {
+        "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "patient_id": pid, "clinic": clinic, "measure": measure,
+        "next": nxt
+    })
+
+    st.title("✅ Nexa Scheduling")
+    st.success("Thanks! We recorded your request.")
+    if nxt:
+        st.link_button("Continue to scheduling", nxt, type="primary")
+        st.caption("If the button does not work, copy/paste this link:")
+        st.code(nxt, language="text")
+    else:
+        st.info("A scheduler will contact you shortly.")
+
+    st.stop()  # Do not render the rest of the app on this landing page
+
 
 # -------- Demo/base data --------
 def load_base_data():
@@ -210,6 +284,32 @@ with msg_tab:
         preview_text = render_template(template, r0, preview_link)
         st.info(f"**Preview:** {preview_text}")
         st.caption("Placeholders coming soon: {patient_id}, {clinic}, {measure}")
+# ---------- Portal landing (click-tracking & forward) ----------
+_q = st.query_params
+if _q.get("portal", None) == "1":
+    pid     = _q.get("pid", "")
+    clinic  = _q.get("clinic", "")
+    measure = _q.get("measure", "")
+    nxt     = _q.get("next", "")
+
+    # Log the click
+    _log_row("clicks.csv", {
+        "ts": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "patient_id": pid, "clinic": clinic, "measure": measure,
+        "next": nxt
+    })
+
+    st.title("✅ Nexa Scheduling")
+    st.success("Thanks! We recorded your request.")
+    if nxt:
+        st.link_button("Continue to scheduling", nxt, type="primary")
+        st.caption("If the button does not work, copy/paste this link:")
+        st.code(nxt, language="text")
+    else:
+        st.info("A scheduler will contact you shortly.")
+
+    st.stop()  # Do not render the rest of the app on this landing page
+
         count = len(mdf)
         st.metric("Recipients to send", count)
         if st.button("Send Messages", type="primary"):
@@ -242,6 +342,7 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
 
 
 
