@@ -1,14 +1,20 @@
 ﻿import pandas as pd
 import plotly.express as px
 import streamlit as st
+# --- make local packages importable (qscore-suite/) ---
+import sys, pathlib
+_ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from db.store import ensure_schema, log_outreach, get_engine, ensure_schema_all, seed_demo_data, create_appointment_from_outreach
+from services.messaging import send_sms, send_email
 # --- make local packages importable ---
 import sys, pathlib
 _ROOT = pathlib.Path(__file__).resolve().parent.parent  # points to qscore-suite/
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from db.store import ensure_schema, log_outreach, get_engine, ensure_schema_all, seed_demo_data, create_appointment_from_outreach
-from services.messaging import send_sms, send_email
 # ============== CONFIG: official measures & goals (EDIT HERE) ==============
 MEASURE_WHITELIST = [
     "Hemoglobin A1c Control <8",
@@ -362,3 +368,4 @@ with msg_tab:
         st.dataframe(appt_df, use_container_width=True, height=240)
     else:
         st.info("No appointments recorded yet.")
+
