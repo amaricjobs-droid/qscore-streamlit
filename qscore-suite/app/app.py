@@ -7,7 +7,7 @@ _ROOT = pathlib.Path(__file__).resolve().parent.parent  # points to qscore-suite
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from db.store import ensure_schema, log_outreach
+from db.store import ensure_schema, log_outreach, get_engine, ensure_schema_all, seed_demo_data, create_appointment_from_outreach
 from services.messaging import send_sms, send_email
 # ============== CONFIG: official measures & goals (EDIT HERE) ==============
 MEASURE_WHITELIST = [
@@ -265,3 +265,100 @@ def _best_contact(row):
     return phone, email
 
 
+
+# ================= EXTRA: Messaging Ops Console & Explainer (additive) =================
+if "msg_extra_initialized" not in st.session_state:
+    st.session_state.msg_extra_initialized = True
+    try:
+        ensure_schema_all()
+    except Exception:
+        pass
+
+with msg_tab:
+    st.divider()
+    st.markdown("### How this works (at a glance)")
+    st.write("""
+- **Select patients** via filters on the left (optionally non-compliant only).
+- Compose a message and click **Send Messages**. If messaging keys are set (Twilio/SendGrid), messages go out; otherwise demo-sends log to the database.
+- Every attempt is written to an **Outreach Log** (status: sent/delivered/failed).
+- You can **seed demo rows**, **search past outreach**, and **mark confirmed appointments** to simulate a live environment.
+    """)
+
+    st.markdown("### Quick demo controls")
+    c1, c2, c3 = st.columns([1,1,2])
+    with c1:
+        if st.button("Seed demo data (logs + 1 appt)"):
+            try:
+                seed_demo_data()
+                st.success("Seeded demo outreach + appointment.")
+            except Exception as e:
+                st.error(f"Seed failed: {e}")
+    with c2:
+        refresh = st.button("Refresh log & appointments")
+
+    # Fetch log & appointments for the console
+    engine = get_engine()
+    import pandas as _pd
+    import datetime as _dt
+
+    log_df = _pd.read_sql_query("SELECT * FROM outreach ORDER BY created_at DESC LIMIT 1000", engine)
+    appt_df = _pd.read_sql_query("SELECT * FROM appointments ORDER BY scheduled_at DESC LIMIT 500", engine) if refresh or True else _pd.DataFrame()
+
+    st.markdown("### Past outreach (searchable)")
+    # Client-side filters for demo simplicity
+    f1, f2, f3, f4 = st.columns([1.2,1.2,1,1.4])
+    with f1:
+        q = st.text_input("Search (patient/measure/clinic)", "")
+    with f2:
+        ch = st.multiselect("Channel", ["sms","email"], [])
+    with f3:
+        stts = st.multiselect("Status", ["queued","sent","delivered","failed"], [])
+    with f4:
+        days = st.selectbox("Lookback (days)", [7,14,30,90,365], index=2)
+
+    if not log_df.empty:
+        cutoff = _dt.datetime.utcnow() - _dt.timedelta(days=int(days))
+        log_df = log_df[ _pd.to_datetime(log_df["created_at"], errors="coerce") >= cutoff ]
+        if q:
+            ql = q.lower()
+            log_df = log_df[
+                log_df["patient_id"].astype(str).str.lower().str.contains(ql)
+                | log_df["measure"].astype(str).str.lower().str.contains(ql)
+                | log_df["clinic"].astype(str).str.lower().str.contains(ql)
+            ]
+        if ch:
+            log_df = log_df[ log_df["channel"].isin(ch) ]
+        if stts:
+            log_df = log_df[ log_df["status"].isin(stts) ]
+
+        st.dataframe(log_df, use_container_width=True, height=300)
+        csv = log_df.to_csv(index=False).encode("utf-8")
+        st.download_button("Download outreach CSV", csv, file_name="outreach_log.csv", mime="text/csv")
+    else:
+        st.info("No outreach yet — use **Seed demo data** or send a batch.")
+
+    st.markdown("### Mark confirmed appointments (demo)")
+    if not log_df.empty:
+        # Let user pick some outreach rows to turn into appointments
+        sel = st.multiselect("Select outreach IDs to confirm", log_df["id"].astype(str).tolist()[:50])
+        when = st.date_input("Appointment date", value=_dt.date.today() + _dt.timedelta(days=3))
+        if st.button("Create confirmed appointments"):
+            try:
+                # Create appointments for each selected outreach
+                for oid in sel:
+                    row = log_df[ log_df["id"].astype(str) == oid ].iloc[0].to_dict()
+                    when_dt = _dt.datetime.combine(when, _dt.time(hour=14, minute=0))
+                    create_appointment_from_outreach(row, when_dt)
+                st.success(f"Created {len(sel)} confirmed appointment(s).")
+                # refresh appt_df
+                appt_df = _pd.read_sql_query("SELECT * FROM appointments ORDER BY scheduled_at DESC LIMIT 500", engine)
+            except Exception as e:
+                st.error(f"Could not create appointments: {e}")
+    else:
+        st.caption("Send or seed some outreach to enable appointments.")
+
+    st.markdown("### Recent appointments")
+    if appt_df is not None and not appt_df.empty:
+        st.dataframe(appt_df, use_container_width=True, height=240)
+    else:
+        st.info("No appointments recorded yet.")
