@@ -23,13 +23,13 @@ def _log_row(filename: str, row: dict):
         w.writerow(row)
 
 def tracking_link(patient_id: str, clinic: str, measure: str, target_url: str = "") -> str:
-    """Return an internal link that records the click before sending to the real portal."""
-    # Relative link keeps it portable on Cloud and local
+    \"\"\"Return an internal link that records the click before sending to the real portal.\"\"\"
     q = {
         "portal": "1",
         "pid": str(patient_id),
         "clinic": clinic,
         "measure": measure,
+    }
     if target_url:
         q["next"] = target_url
     return "./?" + urlencode(q, doseq=False)
@@ -406,6 +406,7 @@ with help_tab:
 
 **Need assistance?** Contact Nexa Support.
 """)
+
 
 
 
