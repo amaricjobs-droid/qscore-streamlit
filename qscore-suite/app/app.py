@@ -604,3 +604,4 @@ def _resolve_logo_path():
     return None
 
 
+
