@@ -406,3 +406,96 @@ with msg_tab:
 
 
 
+
+# ## == ENHANCED DATA HELPERS == (additive)
+import re
+ENHANCED_KNOWN_COLS = [
+    "patient_id","first_name","last_name","dob","address","city","state","zip","county",
+    "phone_mobile","phone_home","email","insurance","provider_name","provider_npi",
+    "practice","clinic","quality_care_gap","measure","date","last_visit","due_date","compliant"
+]
+def _norm_phone(p):
+    if p is None: return ""
+    s = re.sub(r"[^0-9]","", str(p))
+    if len(s)==10: return f"{s[0:3]}-{s[3:6]}-{s[6:10]}"
+    if len(s)==11 and s.startswith("1"): return f"{s[1:4]}-{s[4:7]}-{s[7:11]}"
+    return s
+def _norm_zip(z):
+    if z is None: return ""
+    s = re.sub(r"[^0-9]","", str(z))[:5]
+    return s
+def coerce_uploaded(df):
+    # Make sure required basics exist
+    for c in ["patient_id","clinic","measure"]:
+        if c not in df.columns: df[c] = ""
+    # Normalize common fields
+    for c in ["date","last_visit","due_date","dob"]:
+        if c in df.columns:
+            df[c] = pd.to_datetime(df[c], errors="coerce").dt.strftime("%Y-%m-%d")
+    if "phone_mobile" in df.columns: df["phone_mobile"] = df["phone_mobile"].map(_norm_phone)
+    if "phone_home"   in df.columns: df["phone_home"]   = df["phone_home"].map(_norm_phone)
+    if "zip"          in df.columns: df["zip"]          = df["zip"].map(_norm_zip)
+    # Ensure quality_care_gap present for display even if equal to measure
+    if "quality_care_gap" not in df.columns and "measure" in df.columns:
+        df["quality_care_gap"] = df["measure"]
+    return df
+# ## == EXTENDED DASHBOARD FILTERS == (non-destructive additions)
+with dash_tab:
+    # Extra sidebar filters that refine the already-filtered fdf
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("More Filters")
+    _ins = sorted(df["insurance"].dropna().unique().tolist()) if "insurance" in df.columns else []
+    _prov= sorted(df["provider_name"].dropna().unique().tolist()) if "provider_name" in df.columns else []
+    _prac= sorted(df["practice"].dropna().unique().tolist()) if "practice" in df.columns else []
+    _county = sorted(df["county"].dropna().unique().tolist()) if "county" in df.columns else []
+    sel_ins = st.sidebar.multiselect("Insurance", _ins, [])
+    sel_prov= st.sidebar.multiselect("Provider", _prov, [])
+    sel_prac= st.sidebar.multiselect("Practice", _prac, [])
+    sel_cnty= st.sidebar.multiselect("County", _county, [])
+
+    try:
+        fdf_ext = fdf.copy()
+    except NameError:
+        fdf_ext = df.copy()
+
+    if sel_ins and "insurance" in fdf_ext.columns:
+        fdf_ext = fdf_ext[fdf_ext["insurance"].isin(sel_ins)]
+    if sel_prov and "provider_name" in fdf_ext.columns:
+        fdf_ext = fdf_ext[fdf_ext["provider_name"].isin(sel_prov)]
+    if sel_prac and "practice" in fdf_ext.columns:
+        fdf_ext = fdf_ext[fdf_ext["practice"].isin(sel_prac)]
+    if sel_cnty and "county" in fdf_ext.columns:
+        fdf_ext = fdf_ext[fdf_ext["county"].isin(sel_cnty)]
+
+    st.markdown("#### Extended Patient Table")
+    _show = [c for c in ENHANCED_KNOWN_COLS if c in fdf_ext.columns]
+    if _show:
+        st.dataframe(fdf_ext[_show].sort_values(by=_show[0]), use_container_width=True, height=420)
+    else:
+        st.caption("No extended columns found in the current dataset.")
+# ## == LOAD DEMO DATASET ==
+with upload_tab:
+    st.markdown("---")
+    st.markdown("### Load Demo Dataset (local)")
+    st.caption("Loads qscore-suite/data/qscore_patients_2025_Jan-Jun_master.csv and replaces session data for this session.")
+    import os
+    demo_path = os.path.join(os.path.dirname(__file__), "..", "data", "qscore_patients_2025_Jan-Jun_master.csv")
+    demo_path = os.path.normpath(demo_path)
+    if st.button("Load Demo Dataset"):
+        try:
+            _df = pd.read_csv(demo_path)
+            _df = coerce_uploaded(_df)
+            # Recompute compliance if TARGETS present
+            if "value" not in _df.columns: _df["value"] = 1.0  # safe default
+            def _comp_row(r):
+                m = r.get("measure"); v = r.get("value", 1.0)
+                if pd.isna(v) or m not in TARGETS: return bool(r.get("compliant", False))
+                t,_ = TARGETS[m]; 
+                try: return float(v) >= float(t)
+                except: return False
+            _df["compliant"] = _df.apply(_comp_row, axis=1)
+            st.session_state.dataframe = _df
+            st.success(f"Loaded demo dataset: {os.path.basename(demo_path)}  (rows: {len(_df)})")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Could not load demo dataset: {e}")
