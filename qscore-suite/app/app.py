@@ -77,8 +77,8 @@ TARGETS = {
 }
 
 # ============== PAGE & BRAND ==============
-st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="📊", layout="wide")
-st.title("📊 Nexa Quality Measure Dashboard")
+st.set_page_config(page_title="Nexa Quality Dashboard", page_icon="Dashboard", layout="wide")
+st.title("Dashboard Nexa Quality Measure Dashboard")
 st.caption("Official measures only • Targets & Stretch displayed • Whole percent formatting")
 
 # ============== DEMO/BASE DATA (replace during Upload tab) ==============
@@ -130,7 +130,7 @@ all_measures = [m for m in MEASURE_WHITELIST if m in df["measure"].unique()]
 
 # ============== NAV ==============
 home_tab, dash_tab, upload_tab, msg_tab, reports_tab, help_tab = st.tabs(
-    ["🏠 Home", "📊 Dashboard", "📤 Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
+    ["🏠 Home", "Dashboard Dashboard", "Upload Upload Data", "📨 Message Patients", "📎 Reports", "❓ Help"]
 )
 
 # Helper: format %
@@ -155,7 +155,7 @@ with home_tab:
     def _home_set_clinic(c: str):
         st.query_params.update({"clinic": c})
         st.session_state["dash_sel_clinics"] = [c]
-        st.toast(f"Clinic set to {c}. Open the 📊 Dashboard tab.")
+        st.toast(f"Clinic set to {c}. Open the Dashboard Dashboard tab.")
         st.rerun()
     cols = st.columns(min(len(all_clinics), 6) or 1)
     for i, c in enumerate(all_clinics):
@@ -575,3 +575,4 @@ def render_brand_header():
                 st.button("Message Patients", key="pro_nav_msg", help="Outreach console")
             with bcols[3]:
                 st.button("Reports", key="pro_nav_reports", help="View or export reports")
+
