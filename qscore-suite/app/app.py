@@ -576,3 +576,13 @@ def render_brand_header():
             with bcols[3]:
                 st.button("Reports", key="pro_nav_reports", help="View or export reports")
 
+
+# ## == BRAND FOOTER ==
+def render_brand_footer():
+    st.markdown(
+        "<div style='text-align:center;color:#64748B;margin-top:24px;'>"
+        "© " + str(pd.Timestamp.now().year) + " Nexa Health • All rights reserved"
+        "</div>", unsafe_allow_html=True
+    )
+render_brand_footer()
+
