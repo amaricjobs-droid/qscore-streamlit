@@ -6,3 +6,6 @@ __pycache__/
 .streamlit/secrets.toml
 qscore-suite/app/logs/*.csv
 qscore-suite/app/logs/*.log
+# local backups
+qscore-suite/app/app.py.bak*
+qscore-suite/app/app_backup_*.py
