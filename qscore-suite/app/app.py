@@ -661,3 +661,25 @@ def _resolve_logo_path():
 
 
 
+
+def render_brand_header():
+    with st.container():
+        c1, c2 = st.columns([1,4], gap="large")
+        with c1:
+            logo = _resolve_logo_path()
+            if logo:
+                st.image(logo, width=120)
+        with c2:
+            st.markdown(
+                """
+                <div class='nexa-card'>
+                    <h1 style='margin:0;'>Nexa Q-Score</h1>
+                    <div style='color:#334155;'>
+                        Autonomous Population Health • NCQA Aligned • HIPAA+ Secure
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+render_brand_header()
