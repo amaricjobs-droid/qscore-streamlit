@@ -615,7 +615,7 @@ def render_brand_header():
     with st.container():
         c1, c2 = st.columns([3,2], gap="large")
         with c1:
-            st.markdown("<div class='nexa-card'><h1 style='margin:0;'>Nexa Q-Score</h1><div style='color:#334155;'>Autonomous Population Health • NCQA Aligned • HIPAA+ Secure</div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='nexa-card'><h1 style='margin:0;'>Nexa Q-Score</h1><div style='color:#334155;'>Autonomous Population Health • NCQA Aligned • HIPAA+ Secure</div><div style="color:#64748B;">Role: ' + st.session_state.get('user_role','—') + '</div></div>", unsafe_allow_html=True)
         with c2:
             # Serious quick actions (they do not change app logic; just obvious entry points)
             bcols = st.columns(4)
@@ -654,6 +654,7 @@ def _resolve_logo_path():
         if p.exists():
             return str(p)
     return None
+
 
 
 
