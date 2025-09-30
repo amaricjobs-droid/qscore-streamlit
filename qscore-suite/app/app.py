@@ -2,6 +2,57 @@
 import plotly.express as px
 import streamlit as st
 
+# ## == ROLE SELECTION SCREEN == (additive)
+ROLES = [
+    "Physician",
+    "Nurse Practitioner",
+    "Medical Assistant",
+    "Quality Coordinator",
+    "Administrator"
+]
+
+def render_role_selection():
+    # Try to use the logo loader if present, else fall back
+    try:
+        logo = _resolve_logo_path()
+    except Exception:
+        logo = "qscore-suite/assets/nexa_logo.png"
+
+    st.markdown(
+        """
+        <div style="text-align:center; margin-top:24px;">
+            <img src="" alt="Nexa Logo" width="1" style="display:none;" />
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    if logo:
+        st.image(logo, width=160)
+
+    st.markdown(
+        "<h2 style='text-align:center; margin:10px 0 2px 0; color:#0A3D91;'>Nexa Q-Score Suite</h2>"
+        "<div style='text-align:center; color:#64748B;'>Population Health • NCQA Aligned • HIPAA+ Secure</div>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### Select your department / role")
+    role = st.selectbox("Role", ROLES, index=3)  # default to Quality Coordinator
+
+    c1, c2 = st.columns(2)
+    proceed = c1.button("Continue", use_container_width=True)
+    cancel  = c2.button("Cancel",   use_container_width=True)
+
+    if proceed:
+        st.session_state.user_role = role
+        st.rerun()
+    if cancel:
+        st.stop()
+
+# Gate: require a role before showing the rest of the app
+if "user_role" not in st.session_state:
+    render_role_selection()
+    st.stop()
+
 # --- robust local module loader (no sys.path/package needed) ---
 import importlib.util, pathlib
 
@@ -603,6 +654,7 @@ def _resolve_logo_path():
         if p.exists():
             return str(p)
     return None
+
 
 
 
