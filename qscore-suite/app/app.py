@@ -499,3 +499,61 @@ with upload_tab:
             st.rerun()
         except Exception as e:
             st.error(f"Could not load demo dataset: {e}")
+
+# ## == BRAND CSS == (additive; safe)
+def _inject_brand_css():
+    st.markdown("""
+    <style>
+    /* Hide Streamlit's default menu/footer for a cleaner enterprise feel */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* Page padding so a top header looks natural */
+    .block-container {padding-top: 1.6rem; padding-bottom: 2rem;}
+
+    /* Headings */
+    h1, .stMarkdown h1 { color:#0A3D91; font-weight:700; letter-spacing:0.3px; }
+    h2, .stMarkdown h2 { color:#0A3D91; font-weight:650; letter-spacing:0.2px; }
+    h3, .stMarkdown h3 { color:#0A3D91; font-weight:600; }
+
+    /* Card-like containers */
+    .nexa-card {
+        border: 1px solid #E5E7EB;
+        border-radius: 16px;
+        padding: 16px 18px;
+        background: #FFFFFF;
+        box-shadow: 0 1px 2px rgba(16,24,40,.06);
+        margin-bottom: 14px;
+    }
+
+    /* Primary buttons (replace emoji vibe with clean weight) */
+    .stButton>button {
+        border-radius: 12px;
+        border: 1px solid #CBD5E1;
+        background: #0A3D91;
+        color: #FFFFFF;
+        font-weight: 600;
+        padding: 0.6rem 1rem;
+    }
+    .stButton>button:hover { filter: brightness(1.05); }
+
+    /* Secondary buttons */
+    .nexa-secondary button {
+        background: #F6F8FB !important;
+        color: #0F172A !important;
+        border: 1px solid #E2E8F0 !important;
+    }
+
+    /* Simple KPI tiles */
+    .kpi-tile {
+        background:#F6F8FB; border:1px solid #E5E7EB; border-radius:14px;
+        padding:12px 14px; text-align:center;
+    }
+    .kpi-label { color:#334155; font-size:0.85rem; }
+    .kpi-value { color:#0A3D91; font-weight:700; font-size:1.4rem; }
+
+    /* Subtle links */
+    a, .stMarkdown a { color:#0A3D91; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    </style>
+    """, unsafe_allow_html=True)
