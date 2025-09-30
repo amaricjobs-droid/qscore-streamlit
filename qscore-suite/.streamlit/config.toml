@@ -1,6 +1,7 @@
 ﻿[theme]
-primaryColor = "#1E3A8A"              # Nexa Blue
-backgroundColor = "#FFFFFF"           # Page background
-secondaryBackgroundColor = "#FFF9E6"  # Cards/sidebar (soft gold)
-textColor = "#0F172A"                 # Near-black text
-font = "sans serif"
+base="light"
+primaryColor="#0A3D91"                 # Nexa Blue
+backgroundColor="#FFFFFF"
+secondaryBackgroundColor="#F6F8FB"     # light slate
+textColor="#0F172A"                     # near-black slate
+font="sans serif"
