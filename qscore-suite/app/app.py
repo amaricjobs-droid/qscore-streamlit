@@ -557,3 +557,21 @@ def _inject_brand_css():
     a:hover { text-decoration:underline; }
     </style>
     """, unsafe_allow_html=True)
+
+# ## == BRAND HEADER == (additive; non-invasive)
+def render_brand_header():
+    with st.container():
+        c1, c2 = st.columns([3,2], gap="large")
+        with c1:
+            st.markdown("<div class='nexa-card'><h1 style='margin:0;'>Nexa Q-Score</h1><div style='color:#334155;'>Autonomous Population Health • NCQA Aligned • HIPAA+ Secure</div></div>", unsafe_allow_html=True)
+        with c2:
+            # Serious quick actions (they do not change app logic; just obvious entry points)
+            bcols = st.columns(4)
+            with bcols[0]:
+                st.button("Dashboard", key="pro_nav_dash", help="Open performance dashboards")
+            with bcols[1]:
+                st.button("Upload Data", key="pro_nav_upload", help="Upload CSV/Excel")
+            with bcols[2]:
+                st.button("Message Patients", key="pro_nav_msg", help="Outreach console")
+            with bcols[3]:
+                st.button("Reports", key="pro_nav_reports", help="View or export reports")
