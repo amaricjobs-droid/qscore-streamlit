@@ -587,3 +587,18 @@ def render_brand_footer():
 render_brand_footer()
 
 
+
+# ## == LOGO LOADER == (robust path resolution)
+from pathlib import Path
+
+def _resolve_logo_path():
+    here = Path(__file__).resolve()
+    assets = here.parent.parent / "assets"
+    candidates = [
+        assets / "nexa_logo.png",
+        assets / "nexa_logo.png.png",
+    ]
+    for p in candidates:
+        if p.exists():
+            return str(p)
+    return None
