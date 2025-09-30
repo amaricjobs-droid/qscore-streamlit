@@ -610,7 +610,7 @@ def _inject_brand_css():`r`n    pass`r`n`r`n_inject_brand_css()`r`nrender_brand_
     """, unsafe_allow_html=True)
 
 # ## == BRAND HEADER == (additive; non-invasive)
-def render_brand_header():
+
     with st.container():
         c1, c2 = st.columns([3,2], gap="large")
         with c1:
@@ -682,5 +682,6 @@ def render_brand_header():
             )
 
 render_brand_header()
+
 
 
