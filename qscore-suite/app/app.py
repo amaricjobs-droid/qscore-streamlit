@@ -602,3 +602,4 @@ def _resolve_logo_path():
         if p.exists():
             return str(p)
     return None
+
