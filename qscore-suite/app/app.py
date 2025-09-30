@@ -552,7 +552,7 @@ with upload_tab:
             st.error(f"Could not load demo dataset: {e}")
 
 # ## == BRAND CSS == (additive; safe)
-def _inject_brand_css():`n    pass`n`n_inject_brand_css()`nrender_brand_header()
+def _inject_brand_css():`r`n    pass`r`n`r`n_inject_brand_css()`r`nrender_brand_header()
     st.markdown("""
     <style>
     /* Hide Streamlit's default menu/footer for a cleaner enterprise feel */
@@ -682,4 +682,5 @@ def render_brand_header():
             )
 
 render_brand_header()
+
 
