@@ -502,6 +502,7 @@ with upload_tab:
 
 # ## == BRAND CSS == (additive; safe)
 def _inject_brand_css():
+render_brand_header()
     st.markdown("""
     <style>
     /* Hide Streamlit's default menu/footer for a cleaner enterprise feel */
@@ -602,6 +603,7 @@ def _resolve_logo_path():
         if p.exists():
             return str(p)
     return None
+
 
 
 
